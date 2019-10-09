@@ -160,7 +160,7 @@ class SimpleTestCase(unittest.TestCase):
         try:
             os.unlink(filename)
             bf = pybloomfilter.BloomFilter.from_base64(filename, b64,
-                                                       perm=0x775)
+                                                       perm=0o775)
             self.assertBfPermissions(bf, '0775')
             self._check_filter_contents(bf)
             self.assertPropertiesPreserved(self.bf, bf)

@@ -16,6 +16,7 @@ import zlib
 import shutil
 import sys
 import base64
+import operator
 
 from base64 import b64encode, b64decode
 
@@ -373,14 +374,12 @@ cdef class BloomFilter:
     def open(cls, filename, mode='r'):
         return cls(cls.ReadFile, 0.1, filename, mode, 0)
 
-def _array_tobytes(ar):
-    if sys.version_info >= (3, 2):
-        return ar.tobytes()
-    else:
-        return ar.tostring()
 
-def _array_frombytes(ar, s):
-    if sys.version_info >= (3, 2):
+if sys.version_info >= (3, 2):
+    _array_tobytes = operator.methodcaller('tobytes')
+    def _array_frombytes(ar, s):
         return ar.frombytes(s)
-    else:
+else:
+    _array_tobytes = operator.methodcaller('tostring')
+    def _array_frombytes(ar, s):
         return ar.fromstring(s)
