@@ -9,7 +9,7 @@ import pybloomfilter
 
 from tests import with_test_file
 
-if sys.version_info > (3,):
+if sys.version_info >= (3,):
     long = int
     unicode = str
 
