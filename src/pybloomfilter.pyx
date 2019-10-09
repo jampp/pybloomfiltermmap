@@ -245,10 +245,6 @@ cdef class BloomFilter:
         if isinstance(item, bytes):
             key.shash = item
             key.nhash = len(item)
-        elif isinstance(item, str):
-            item = item.encode()
-            key.shash = item
-            key.nhash = len(item)
         elif isinstance(item, unicode):
             item = item.encode("utf8")
             key.shash = item
@@ -278,10 +274,6 @@ cdef class BloomFilter:
         self._assert_open()
         cdef cbloomfilter.Key key
         if isinstance(item, bytes):
-            key.shash = item
-            key.nhash = len(item)
-        elif isinstance(item, str):
-            item = item.encode()
             key.shash = item
             key.nhash = len(item)
         elif isinstance(item, unicode):
