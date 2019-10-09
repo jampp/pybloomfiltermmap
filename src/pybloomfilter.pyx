@@ -14,7 +14,8 @@ import errno as eno
 import array
 import zlib
 import shutil
-
+import sys
+import base64
 
 cdef extern int errno
 
@@ -96,9 +97,10 @@ cdef class BloomFilter:
 
         if not oflags & os.O_CREAT: #if the file is already created
             if os.path.exists(filename):
+                filename_ = filename if isinstance(filename, bytes) else filename.encode()
                 self._bf = cbloomfilter.bloomfilter_Create_Mmap(_capacity,
                                                            error_rate,
-                                                           filename,
+                                                           filename_,
                                                            0,
                                                            oflags,
                                                            perm,
@@ -140,7 +142,7 @@ cdef class BloomFilter:
 
             hash_seeds = array.array('I')
             hash_seeds.extend([random.getrandbits(32) for i in range(num_hashes)])
-            test = hash_seeds.tostring()
+            test = _array_tobytes(hash_seeds)
             seeds = test
 
             # If a filename is provided, we should make a mmap-file
@@ -148,7 +150,7 @@ cdef class BloomFilter:
             if filename:
                 self._bf = cbloomfilter.bloomfilter_Create_Mmap(_capacity,
                                                        error_rate,
-                                                       filename,
+                                                       filename.encode(),
                                                        num_bits,
                                                        oflags,
                                                        perm,
@@ -176,7 +178,10 @@ cdef class BloomFilter:
         def __get__(self):
             self._assert_open()
             result = array.array('I')
-            result.fromstring((<char *>self._bf.hash_seeds)[:4 * self.num_hashes])
+            _array_frombytes(
+                result,
+                (<char *>self._bf.hash_seeds)[:4 * self.num_hashes]
+            )
             return result
 
     property capacity:
@@ -240,6 +245,10 @@ cdef class BloomFilter:
         if isinstance(item, bytes):
             key.shash = item
             key.nhash = len(item)
+        elif isinstance(item, str):
+            item = item.encode()
+            key.shash = item
+            key.nhash = len(item)
         elif isinstance(item, unicode):
             item = item.encode("utf8")
             key.shash = item
@@ -269,6 +278,10 @@ cdef class BloomFilter:
         self._assert_open()
         cdef cbloomfilter.Key key
         if isinstance(item, bytes):
+            key.shash = item
+            key.nhash = len(item)
+        elif isinstance(item, str):
+            item = item.encode()
             key.shash = item
             key.nhash = len(item)
         elif isinstance(item, unicode):
@@ -349,19 +362,43 @@ cdef class BloomFilter:
 
     def to_base64(self):
         self._assert_open()
-        bfile = open(self.name, 'r')
-        result = zlib.compress(zlib.compress(bfile.read(), 9).encode('base64')).encode('base64')
+        bfile = open(self.name, 'rb')
+        result = base64.b64encode(
+            zlib.compress(
+                base64.b64encode(zlib.compress(bfile.read(), 9))
+            )
+        )
         bfile.close()
         return result
 
     @classmethod
     def from_base64(cls, filename, string, perm=0755):
         bfile_fp = os.open(filename, construct_mode('w+'), perm)
-        os.write(bfile_fp, zlib.decompress(zlib.decompress(
-            string.decode('base64')).decode('base64')))
+        os.write(
+            bfile_fp, 
+            zlib.decompress(
+                base64.b64decode(
+                    zlib.decompress(
+                        base64.b64decode(string)
+                    )
+                )
+            )
+        )
         os.close(bfile_fp)
         return cls.open(filename)
 
     @classmethod
     def open(cls, filename, mode='r'):
         return cls(cls.ReadFile, 0.1, filename, mode, 0)
+
+def _array_tobytes(ar):
+    if sys.version_info >= (3, 2):
+        return ar.tobytes()
+    else:
+        return ar.tostring()
+
+def _array_frombytes(ar, s):
+    if sys.version_info >= (3, 2):
+        return ar.frombytes(s)
+    else:
+        return ar.fromstring(s)

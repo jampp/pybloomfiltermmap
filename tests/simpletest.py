@@ -2,12 +2,16 @@ import os
 import string
 import unittest
 import tempfile
+import sys
 from random import randint, choice
 
 import pybloomfilter
 
 from tests import with_test_file
 
+if sys.version_info > (3,):
+    long = int
+    unicode = str
 
 class SimpleTestCase(unittest.TestCase):
     FILTER_SIZE = 200
@@ -40,8 +44,8 @@ class SimpleTestCase(unittest.TestCase):
         self.assertEqual([], failures)
 
     def _random_str(self, length=16):
-        chars = string.lowercase + string.uppercase
-        return ''.join(choice(chars) for _ in xrange(length))
+        chars = string.ascii_letters
+        return ''.join(choice(chars) for _ in range(length))
 
     def _random_set_of_stuff(self, c):
         """
@@ -84,7 +88,7 @@ class SimpleTestCase(unittest.TestCase):
         # We might say something is in the filter which isn't; we're only
         # trying to test correctness, here, so we are very lenient.  If the
         # false positive rate is within 2 orders of magnitude, we're okay.
-        false_pos = len(filter(bf.__contains__, self._not_in_filter))
+        false_pos = len(list(filter(bf.__contains__, self._not_in_filter)))
         error_rate = float(false_pos) / len(self._not_in_filter)
         self.assertTrue(error_rate < 100 * self.FILTER_ERROR_RATE,
                         '%r / %r = %r > %r' % (false_pos,
@@ -156,7 +160,7 @@ class SimpleTestCase(unittest.TestCase):
         try:
             os.unlink(filename)
             bf = pybloomfilter.BloomFilter.from_base64(filename, b64,
-                                                       perm=0775)
+                                                       perm=0x775)
             self.assertBfPermissions(bf, '0775')
             self._check_filter_contents(bf)
             self.assertPropertiesPreserved(self.bf, bf)
@@ -170,7 +174,7 @@ class SimpleTestCase(unittest.TestCase):
     @with_test_file
     def test_others(self, filename):
         bf = pybloomfilter.BloomFilter(100, 0.01, filename)
-        for elem in (1.2, 2343L, (1, 2), object(), u'\u2131\u3184'):
+        for elem in (1.2, long(2343), (1, 2), object(), u'\u2131\u3184'):
             bf.add(elem)
             self.assertEquals(elem in bf, True)
 
@@ -186,7 +190,7 @@ class SimpleTestCase(unittest.TestCase):
 
     def test_others_nofile(self):
         bf = pybloomfilter.BloomFilter(100, 0.01)
-        for elem in (1.2, 2343L, (1, 2), object(), u'\u2131\u3184'):
+        for elem in (1.2, long(2343), (1, 2), object(), u'\u2131\u3184'):
             bf.add(elem)
             self.assertEquals(elem in bf, True)
 
