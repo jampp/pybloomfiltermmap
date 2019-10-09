@@ -1620,7 +1620,7 @@ static PyObject *__pyx_int_2;
 static PyObject *__pyx_int_3;
 static PyObject *__pyx_int_4;
 static PyObject *__pyx_int_9;
-static PyObject *__pyx_int_14;
+static PyObject *__pyx_int_15;
 static PyObject *__pyx_int_32;
 static PyObject *__pyx_int_493;
 static PyObject *__pyx_tuple__3;
@@ -9605,11 +9605,11 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
   __Pyx_GIVEREF(__pyx_tuple__8);
 
   /* "pybloomfilter.pyx":1
- * VERSION = (0, 3, 14)             # <<<<<<<<<<<<<<
+ * VERSION = (0, 3, 15)             # <<<<<<<<<<<<<<
  * AUTHOR = "Michael Axiak"
  * 
  */
-  __pyx_tuple__9 = PyTuple_Pack(3, __pyx_int_0, __pyx_int_3, __pyx_int_14); if (unlikely(!__pyx_tuple__9)) __PYX_ERR(0, 1, __pyx_L1_error)
+  __pyx_tuple__9 = PyTuple_Pack(3, __pyx_int_0, __pyx_int_3, __pyx_int_15); if (unlikely(!__pyx_tuple__9)) __PYX_ERR(0, 1, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__9);
   __Pyx_GIVEREF(__pyx_tuple__9);
 
@@ -9687,7 +9687,7 @@ static CYTHON_SMALL_CODE int __Pyx_InitGlobals(void) {
   __pyx_int_3 = PyInt_FromLong(3); if (unlikely(!__pyx_int_3)) __PYX_ERR(0, 1, __pyx_L1_error)
   __pyx_int_4 = PyInt_FromLong(4); if (unlikely(!__pyx_int_4)) __PYX_ERR(0, 1, __pyx_L1_error)
   __pyx_int_9 = PyInt_FromLong(9); if (unlikely(!__pyx_int_9)) __PYX_ERR(0, 1, __pyx_L1_error)
-  __pyx_int_14 = PyInt_FromLong(14); if (unlikely(!__pyx_int_14)) __PYX_ERR(0, 1, __pyx_L1_error)
+  __pyx_int_15 = PyInt_FromLong(15); if (unlikely(!__pyx_int_15)) __PYX_ERR(0, 1, __pyx_L1_error)
   __pyx_int_32 = PyInt_FromLong(32); if (unlikely(!__pyx_int_32)) __PYX_ERR(0, 1, __pyx_L1_error)
   __pyx_int_493 = PyInt_FromLong(493); if (unlikely(!__pyx_int_493)) __PYX_ERR(0, 1, __pyx_L1_error)
   return 0;
@@ -10000,14 +10000,14 @@ if (!__Pyx_RefNanny) {
   #endif
 
   /* "pybloomfilter.pyx":1
- * VERSION = (0, 3, 14)             # <<<<<<<<<<<<<<
+ * VERSION = (0, 3, 15)             # <<<<<<<<<<<<<<
  * AUTHOR = "Michael Axiak"
  * 
  */
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_VERSION, __pyx_tuple__9) < 0) __PYX_ERR(0, 1, __pyx_L1_error)
 
   /* "pybloomfilter.pyx":2
- * VERSION = (0, 3, 14)
+ * VERSION = (0, 3, 15)
  * AUTHOR = "Michael Axiak"             # <<<<<<<<<<<<<<
  * 
  * __VERSION__ = VERSION
@@ -10277,7 +10277,7 @@ if (!__Pyx_RefNanny) {
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   /* "pybloomfilter.pyx":1
- * VERSION = (0, 3, 14)             # <<<<<<<<<<<<<<
+ * VERSION = (0, 3, 15)             # <<<<<<<<<<<<<<
  * AUTHOR = "Michael Axiak"
  * 
  */
