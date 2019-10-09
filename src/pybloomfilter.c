@@ -5688,7 +5688,7 @@ static PyObject *__pyx_pf_13pybloomfilter_11BloomFilter_16copy_template(struct _
  *         cdef BloomFilter copy = BloomFilter(0, 0, NoConstruct)
  *         if os.path.exists(filename):             # <<<<<<<<<<<<<<
  *             os.unlink(filename)
- *         copy._bf = cbloomfilter.bloomfilter_Copy_Template(self._bf, filename, perm)
+ *         copy._bf = cbloomfilter.bloomfilter_Copy_Template(self._bf, filename.encode(), perm)
  */
   __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_os); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 264, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
@@ -5721,7 +5721,7 @@ static PyObject *__pyx_pf_13pybloomfilter_11BloomFilter_16copy_template(struct _
  *         cdef BloomFilter copy = BloomFilter(0, 0, NoConstruct)
  *         if os.path.exists(filename):
  *             os.unlink(filename)             # <<<<<<<<<<<<<<
- *         copy._bf = cbloomfilter.bloomfilter_Copy_Template(self._bf, filename, perm)
+ *         copy._bf = cbloomfilter.bloomfilter_Copy_Template(self._bf, filename.encode(), perm)
  *         return copy
  */
     __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_os); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 265, __pyx_L1_error)
@@ -5751,24 +5751,42 @@ static PyObject *__pyx_pf_13pybloomfilter_11BloomFilter_16copy_template(struct _
  *         cdef BloomFilter copy = BloomFilter(0, 0, NoConstruct)
  *         if os.path.exists(filename):             # <<<<<<<<<<<<<<
  *             os.unlink(filename)
- *         copy._bf = cbloomfilter.bloomfilter_Copy_Template(self._bf, filename, perm)
+ *         copy._bf = cbloomfilter.bloomfilter_Copy_Template(self._bf, filename.encode(), perm)
  */
   }
 
   /* "pybloomfilter.pyx":266
  *         if os.path.exists(filename):
  *             os.unlink(filename)
- *         copy._bf = cbloomfilter.bloomfilter_Copy_Template(self._bf, filename, perm)             # <<<<<<<<<<<<<<
+ *         copy._bf = cbloomfilter.bloomfilter_Copy_Template(self._bf, filename.encode(), perm)             # <<<<<<<<<<<<<<
  *         return copy
  * 
  */
-  __pyx_t_5 = __Pyx_PyObject_AsWritableString(__pyx_v_filename); if (unlikely((!__pyx_t_5) && PyErr_Occurred())) __PYX_ERR(0, 266, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_v_filename, __pyx_n_s_encode); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 266, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+  __pyx_t_1 = NULL;
+  if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_3))) {
+    __pyx_t_1 = PyMethod_GET_SELF(__pyx_t_3);
+    if (likely(__pyx_t_1)) {
+      PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_3);
+      __Pyx_INCREF(__pyx_t_1);
+      __Pyx_INCREF(function);
+      __Pyx_DECREF_SET(__pyx_t_3, function);
+    }
+  }
+  __pyx_t_2 = (__pyx_t_1) ? __Pyx_PyObject_CallOneArg(__pyx_t_3, __pyx_t_1) : __Pyx_PyObject_CallNoArg(__pyx_t_3);
+  __Pyx_XDECREF(__pyx_t_1); __pyx_t_1 = 0;
+  if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 266, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+  __pyx_t_5 = __Pyx_PyObject_AsWritableString(__pyx_t_2); if (unlikely((!__pyx_t_5) && PyErr_Occurred())) __PYX_ERR(0, 266, __pyx_L1_error)
   __pyx_t_6 = __Pyx_PyInt_As_int(__pyx_v_perm); if (unlikely((__pyx_t_6 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 266, __pyx_L1_error)
   __pyx_v_copy->_bf = bloomfilter_Copy_Template(__pyx_v_self->_bf, __pyx_t_5, __pyx_t_6);
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
   /* "pybloomfilter.pyx":267
  *             os.unlink(filename)
- *         copy._bf = cbloomfilter.bloomfilter_Copy_Template(self._bf, filename, perm)
+ *         copy._bf = cbloomfilter.bloomfilter_Copy_Template(self._bf, filename.encode(), perm)
  *         return copy             # <<<<<<<<<<<<<<
  * 
  *     def copy(self, filename):

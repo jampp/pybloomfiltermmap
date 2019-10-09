@@ -263,7 +263,7 @@ cdef class BloomFilter:
         cdef BloomFilter copy = BloomFilter(0, 0, NoConstruct)
         if os.path.exists(filename):
             os.unlink(filename)
-        copy._bf = cbloomfilter.bloomfilter_Copy_Template(self._bf, filename, perm)
+        copy._bf = cbloomfilter.bloomfilter_Copy_Template(self._bf, filename.encode(), perm)
         return copy
 
     def copy(self, filename):

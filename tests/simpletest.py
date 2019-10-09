@@ -223,6 +223,14 @@ class SimpleTestCase(unittest.TestCase):
         self.assertEquals(pybloomfilter.BloomFilter.ReadFile,
                           bf.ReadFile)
 
+    def test_copy_template(self):
+        self._populate_filter(self.bf)
+        with tempfile.NamedTemporaryFile() as _file:
+            bf2 = self.bf.copy_template(_file.name)
+            self.assertPropertiesPreserved(self.bf, bf2)
+            bf2.union(self.bf)  # Asserts copied bloom filter is comparable
+            self._check_filter_contents(bf2)
+
 
 def suite():
     suite = unittest.TestSuite()
