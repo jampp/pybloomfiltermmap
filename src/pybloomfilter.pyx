@@ -17,6 +17,8 @@ import shutil
 import sys
 import base64
 
+from base64 import b64encode, b64decode
+
 cdef extern int errno
 
 cdef construct_mode(mode):
@@ -355,27 +357,15 @@ cdef class BloomFilter:
     def to_base64(self):
         self._assert_open()
         bfile = open(self.name, 'rb')
-        result = base64.b64encode(
-            zlib.compress(
-                base64.b64encode(zlib.compress(bfile.read(), 9))
-            )
-        )
+        result = b64encode(zlib.compress(b64encode(zlib.compress(bfile.read(), 9))))
         bfile.close()
         return result
 
     @classmethod
     def from_base64(cls, filename, string, perm=0755):
         bfile_fp = os.open(filename, construct_mode('w+'), perm)
-        os.write(
-            bfile_fp, 
-            zlib.decompress(
-                base64.b64decode(
-                    zlib.decompress(
-                        base64.b64decode(string)
-                    )
-                )
-            )
-        )
+        os.write(bfile_fp, zlib.decompress(b64decode(
+            zlib.decompress(b64decode(string)))))
         os.close(bfile_fp)
         return cls.open(filename)
 
