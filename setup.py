@@ -1,3 +1,5 @@
+from __future__ import print_function
+
 import os
 import sys
 
@@ -29,7 +31,7 @@ try:
         sys.argv.remove('--no-cython')
         raise ImportError()
     from Cython.Distutils import build_ext
-    print "info: Building from Cython"
+    print("info: Building from Cython")
     ext_files.append("src/pybloomfilter.pyx")
     kwargs['cmdclass'] = {'build_ext': build_ext}
     #try:
@@ -41,7 +43,7 @@ except ImportError:
     if '--cython' in sys.argv:
         raise
     ext_files.append("src/pybloomfilter.c")
-    print "info: Building from C"
+    print("info: Building from C")
 
 if '--cython' in sys.argv:
     sys.argv.remove('--cython')
@@ -56,7 +58,7 @@ if sys.version_info[0] < 3 and sys.version_info[1] < 7:
     requirements.append('importlib')
 
 setup(name='pybloomfiltermmap',
-      version="0.3.14j",
+      version="0.3.15j",
       author="Michael Axiak, Rob Stacey",
       author_email="mike@axiak.net",
       url="http://github.com/axiak/pybloomfiltermmap/",
