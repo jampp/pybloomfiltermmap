@@ -1,4 +1,4 @@
-VERSION = (0, 3, 16)
+VERSION = (0, 3, 17)
 AUTHOR = "Michael Axiak"
 
 __VERSION__ = VERSION
@@ -65,7 +65,7 @@ cdef class BloomFilter:
     cdef int _in_memory
     cdef public ReadFile
 
-    def __cinit__(self, capacity, double error_rate, filename=None, mode='rw+', int perm=0755 ):
+    def __cinit__(self, capacity, double error_rate, filename=None, mode='rw+', int perm=0755, seed=None):
 
         """
         mode: chmod type access to file, default rw+ for creating the bloom filter
@@ -143,6 +143,8 @@ cdef class BloomFilter:
             #    (1.0 - math.exp(- float(num_hashes) * float(capacity) / num_bits))
             #    ** num_hashes)
 
+            if seed is not None:
+                random.seed(seed)
             hash_seeds = array.array('I')
             hash_seeds.extend([random.getrandbits(32) for i in range(num_hashes)])
             test = _array_tobytes(hash_seeds)
@@ -183,24 +185,24 @@ cdef class BloomFilter:
             result = array.array('I')
             _array_frombytes(
                 result,
-                (<char *>self._bf.hash_seeds)[:4 * self.num_hashes]
+                (<char *>self._bf.header.hash_seeds)[:4 * self.num_hashes]
             )
             return result
 
     property capacity:
         def __get__(self):
             self._assert_open()
-            return self._bf.max_num_elem
+            return self._bf.header.max_num_elem
 
     property error_rate:
         def __get__(self):
             self._assert_open()
-            return self._bf.error_rate
+            return self._bf.header.error_rate
 
     property num_hashes:
         def __get__(self):
             self._assert_open()
-            return self._bf.num_hashes
+            return self._bf.header.num_hashes
 
     property num_bits:
         def __get__(self):
@@ -228,8 +230,8 @@ cdef class BloomFilter:
         self._assert_open()
         my_name = self.__class__.__name__
         return '<%s capacity: %d, error: %0.3f, num_hashes: %d>' % (
-            my_name, self._bf.max_num_elem, self._bf.error_rate,
-            self._bf.num_hashes)
+            my_name, self._bf.header.max_num_elem, self._bf.header.error_rate,
+            self._bf.header.num_hashes)
 
     def __str__(self):
         return self.__repr__()

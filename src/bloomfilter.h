@@ -6,25 +6,28 @@
 #include "mmapbitarray.h"
 #define BF_CURRENT_VERSION 1
 
-struct _BloomFilter {
+typedef struct {
     uint64_t max_num_elem;
     double error_rate;
     uint32_t num_hashes;
-    uint32_t hash_seeds[256];
-    /* All of the bit data is already in here. */
-    MBArray * array;
     unsigned char bf_version;
+
+    uint32_t hash_seeds[256];
+} Header;
+
+typedef struct {
+    Header header;
+
     unsigned char count_correct;
     uint64_t elem_count;
-    uint32_t reserved[32];
-};
+    /* All of the bit data is already in here. */
+    MBArray * array;
+} BloomFilter;
 
 typedef struct {
     uint64_t nhash;
     char * shash;
 } Key;
-
-typedef struct _BloomFilter BloomFilter;
 
 /* Create a bloom filter without a memory-mapped file backing it */
 BloomFilter *bloomfilter_Create_Malloc(size_t max_num_elem, double error_rate,
@@ -58,8 +61,8 @@ static inline int bloomfilter_Add(BloomFilter * bf, Key * key)
     if (key->shash == NULL)
         hashfunc = _hash_long;
 
-    for (i = bf->num_hashes - 1; i >= 0; --i) {
-        hash_res = (*hashfunc)(bf->hash_seeds[i], key) % mod;
+    for (i = bf->header.num_hashes - 1; i >= 0; --i) {
+        hash_res = (*hashfunc)(bf->header.hash_seeds[i], key) % mod;
         if (result && !mbarray_Test(bf->array, hash_res)) {
             result = 0;
         }
@@ -84,8 +87,8 @@ static inline int bloomfilter_Test(BloomFilter * bf, Key * key)
     if (key->shash == NULL)
         hashfunc = _hash_long;
 
-    for (i = bf->num_hashes - 1; i >= 0; --i) {
-        if (!mbarray_Test(bf->array, (*hashfunc)(bf->hash_seeds[i], key) % mod)) {
+    for (i = bf->header.num_hashes - 1; i >= 0; --i) {
+        if (!mbarray_Test(bf->array, (*hashfunc)(bf->header.hash_seeds[i], key) % mod)) {
             return 0;
         }
     }
