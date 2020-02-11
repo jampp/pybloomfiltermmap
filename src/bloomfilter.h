@@ -11,10 +11,10 @@ typedef struct {
     double error_rate;
     uint32_t num_hashes;
     uint32_t hash_seeds[256];
-    MBArray * array;                /* Deprecated field. */
+    MBArray * DEPRECATED_array __attribute__((deprecated));
     unsigned char bf_version;
-    unsigned char count_correct;    /* Deprecated field. */
-    uint64_t elem_count;            /* Deprecated field. */
+    unsigned char DEPRECATED_count_correct __attribute__((deprecated));
+    uint64_t DEPRECATED_elem_count __attribute__((deprecated));
     uint32_t reserved[32];
 } Header;
 
