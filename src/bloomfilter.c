@@ -11,7 +11,7 @@
 BloomFilter *bloomfilter_Create_Malloc(size_t max_num_elem, double error_rate,
                                 BTYPE num_bits, int *hash_seeds, int num_hashes)
 {
-    BloomFilter * bf = (BloomFilter *)malloc(sizeof(BloomFilter));
+    BloomFilter * bf = (BloomFilter *)calloc(1, sizeof(BloomFilter));
     MBArray * array;
 
     if (!bf) {
@@ -22,10 +22,7 @@ BloomFilter *bloomfilter_Create_Malloc(size_t max_num_elem, double error_rate,
     bf->header.error_rate = error_rate;
     bf->header.num_hashes = num_hashes;
     bf->header.bf_version = BF_CURRENT_VERSION;
-    memset(bf->header.hash_seeds, 0, sizeof(bf->header.hash_seeds));
     memcpy(bf->header.hash_seeds, hash_seeds, sizeof(uint32_t) * num_hashes);
-    memset(bf->header.reserved, 0, sizeof(bf->header.reserved));
-    bf->array = NULL;
     array = mbarray_Create_Malloc(num_bits);
     if (!array) {
         bloomfilter_Destroy(bf);
@@ -43,7 +40,7 @@ BloomFilter *bloomfilter_Create_Mmap(size_t max_num_elem, double error_rate,
                                 const char * file, BTYPE num_bits, int oflags, int perms,
                                 int *hash_seeds, int num_hashes)
 {
-    BloomFilter * bf = (BloomFilter *)malloc(sizeof(BloomFilter));
+    BloomFilter * bf = (BloomFilter *)calloc(1, sizeof(BloomFilter));
     MBArray * array;
 
     if (!bf) {
@@ -54,10 +51,7 @@ BloomFilter *bloomfilter_Create_Mmap(size_t max_num_elem, double error_rate,
     bf->header.error_rate = error_rate;
     bf->header.num_hashes = num_hashes;
     bf->header.bf_version = BF_CURRENT_VERSION;
-    memset(bf->header.hash_seeds, 0, sizeof(bf->header.hash_seeds));
     memcpy(bf->header.hash_seeds, hash_seeds, sizeof(uint32_t) * num_hashes);
-    memset(bf->header.reserved, 0, sizeof(bf->header.reserved));
-    bf->array = NULL;
     array = mbarray_Create_Mmap(num_bits, file, (char *)&bf->header, sizeof(Header), oflags, perms);
     if (!array) {
         bloomfilter_Destroy(bf);
@@ -125,7 +119,7 @@ int bloomfilter_Update(BloomFilter * bf, char * data, int size)
 
 BloomFilter * bloomfilter_Copy_Template(BloomFilter * src, char * filename, int perms)
 {
-    BloomFilter * bf = (BloomFilter *)malloc(sizeof(BloomFilter));
+    BloomFilter * bf = (BloomFilter *)calloc(1, sizeof(BloomFilter));
     MBArray * array;
 
     if (bf == NULL) {
