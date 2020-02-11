@@ -10,9 +10,12 @@ typedef struct {
     uint64_t max_num_elem;
     double error_rate;
     uint32_t num_hashes;
-    unsigned char bf_version;
-
     uint32_t hash_seeds[256];
+    /* Unused field. Just here for binary compatibility. */
+    void * unused;
+    unsigned char bf_version;
+    /* Unused array. Needed to keep the header_len compatible with previous versions. */
+    uint32_t reserved[34];
 } Header;
 
 typedef struct {

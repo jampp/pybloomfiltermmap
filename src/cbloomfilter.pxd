@@ -27,8 +27,8 @@ cdef extern from "bloomfilter.h":
          long max_num_elem
          double error_rate
          int num_hashes
-         unsigned char bf_version
          long * hash_seeds
+         unsigned char bf_version
 
      ctypedef struct BloomFilter:
          Header header
