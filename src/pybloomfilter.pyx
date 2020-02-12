@@ -143,10 +143,11 @@ cdef class BloomFilter:
             #    (1.0 - math.exp(- float(num_hashes) * float(capacity) / num_bits))
             #    ** num_hashes)
 
+            rand = random.Random()
             if seed is not None:
-                random.seed(seed)
+                rand.seed(seed)
             hash_seeds = array.array('I')
-            hash_seeds.extend([random.getrandbits(32) for i in range(num_hashes)])
+            hash_seeds.extend([rand.getrandbits(32) for i in range(num_hashes)])
             test = _array_tobytes(hash_seeds)
             seeds = test
 
