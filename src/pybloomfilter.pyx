@@ -1,4 +1,4 @@
-VERSION = (0, 3, 16)
+VERSION = (0, 3, 17)
 AUTHOR = "Michael Axiak"
 
 __VERSION__ = VERSION
@@ -65,7 +65,7 @@ cdef class BloomFilter:
     cdef int _in_memory
     cdef public ReadFile
 
-    def __cinit__(self, capacity, double error_rate, filename=None, mode='rw+', int perm=0755 ):
+    def __cinit__(self, capacity, double error_rate, filename=None, mode='rw+', int perm=0755, seed=None):
 
         """
         mode: chmod type access to file, default rw+ for creating the bloom filter
@@ -143,8 +143,11 @@ cdef class BloomFilter:
             #    (1.0 - math.exp(- float(num_hashes) * float(capacity) / num_bits))
             #    ** num_hashes)
 
+            rand = random.Random()
+            if seed is not None:
+                rand.seed(seed)
             hash_seeds = array.array('I')
-            hash_seeds.extend([random.getrandbits(32) for i in range(num_hashes)])
+            hash_seeds.extend([rand.getrandbits(32) for i in range(num_hashes)])
             test = _array_tobytes(hash_seeds)
             seeds = test
 
@@ -349,10 +352,9 @@ cdef class BloomFilter:
     def _assert_comparable(self, BloomFilter other):
         error = ValueError("The two %s objects are not the same type (hint, "
                            "use copy_template)" % self.__class__.__name__)
-        if self._bf.array.bits != other._bf.array.bits:
-            raise error
-        if self.hash_seeds != other.hash_seeds:
-            raise error
+        for prop in ('capacity', 'error_rate', 'num_hashes', 'num_bits', 'hash_seeds'):
+            if getattr(self, prop) != getattr(other, prop):
+                raise error
         return
 
     def to_base64(self):

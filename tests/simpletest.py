@@ -231,6 +231,51 @@ class SimpleTestCase(unittest.TestCase):
             bf2.union(self.bf)  # Asserts copied bloom filter is comparable
             self._check_filter_contents(bf2)
 
+    def test_union_without_copy_template(self):
+        with tempfile.NamedTemporaryFile() as tmp1:
+            with tempfile.NamedTemporaryFile() as tmp2:
+                bf1 = pybloomfilter.BloomFilter(self.FILTER_SIZE,
+                                                self.FILTER_ERROR_RATE,
+                                                tmp1.name,
+                                                seed=100)
+                bf2 = pybloomfilter.BloomFilter(self.FILTER_SIZE,
+                                                self.FILTER_ERROR_RATE,
+                                                tmp2.name,
+                                                seed=100)
+
+                for i in range(100):
+                    bf1.add(i)
+
+                for i in range(100, 200):
+                    bf2.add(i)
+
+                bf2.union(bf1)  # Should not fail
+
+                self.assertTrue(all(i in bf2 for i in range(200)))
+
+    def test_intersection_without_copy_template(self):
+        with tempfile.NamedTemporaryFile() as tmp1:
+            with tempfile.NamedTemporaryFile() as tmp2:
+                bf1 = pybloomfilter.BloomFilter(self.FILTER_SIZE,
+                                                self.FILTER_ERROR_RATE,
+                                                tmp1.name,
+                                                seed=100)
+                bf2 = pybloomfilter.BloomFilter(self.FILTER_SIZE,
+                                                self.FILTER_ERROR_RATE,
+                                                tmp2.name,
+                                                seed=100)
+
+                for i in range(200):
+                    bf1.add(i)
+
+                for i in range(50, 150):
+                    bf2.add(i)
+
+                bf2.intersection(bf1)  # Should not fail
+
+                self.assertTrue(all(i not in bf2 for i in range(50)))
+                self.assertTrue(all(i in bf2 for i in range(50, 150)))
+                self.assertTrue(all(i not in bf2 for i in range(150, 200)))
 
 def suite():
     suite = unittest.TestSuite()
