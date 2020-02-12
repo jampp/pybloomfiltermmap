@@ -65,7 +65,7 @@ cdef class BloomFilter:
     cdef int _in_memory
     cdef public ReadFile
 
-    def __cinit__(self, capacity, double error_rate, filename=None, mode='rw+', int perm=0755 ):
+    def __cinit__(self, capacity, double error_rate, filename=None, mode='rw+', int perm=0755, seed=None):
 
         """
         mode: chmod type access to file, default rw+ for creating the bloom filter
@@ -143,6 +143,8 @@ cdef class BloomFilter:
             #    (1.0 - math.exp(- float(num_hashes) * float(capacity) / num_bits))
             #    ** num_hashes)
 
+            if seed is not None:
+                random.seed(seed)
             hash_seeds = array.array('I')
             hash_seeds.extend([random.getrandbits(32) for i in range(num_hashes)])
             test = _array_tobytes(hash_seeds)
