@@ -353,8 +353,9 @@ cdef class BloomFilter:
                            "use copy_template)" % self.__class__.__name__)
         if self._bf.array.bits != other._bf.array.bits:
             raise error
-        if self.hash_seeds != other.hash_seeds:
-            raise error
+        for prop in ('capacity', 'error_rate', 'num_hashes', 'num_bits', 'hash_seeds'):
+            if getattr(self, prop) != getattr(other, prop):
+                raise error
         return
 
     def to_base64(self):
