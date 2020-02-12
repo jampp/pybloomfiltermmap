@@ -390,7 +390,7 @@ static inline int _assert_comparable(MBArray * array1, MBArray * array2)
         return 1;
     }
 
-    if (memcmp((char *)array1->vector, (char *)array2->vector, array1->preamblebytes)) {
+    if (memcmp((char *)array1->vector, (char *)array2->vector, MBAMAGICSIZE + sizeof(BTYPE) + sizeof(int32_t))) {
         return 1;
     }
 
