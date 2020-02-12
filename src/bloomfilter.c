@@ -11,26 +11,29 @@
 BloomFilter *bloomfilter_Create_Malloc(size_t max_num_elem, double error_rate,
                                 BTYPE num_bits, int *hash_seeds, int num_hashes)
 {
-    BloomFilter * bf = (BloomFilter *)calloc(1, sizeof(BloomFilter));
+    BloomFilter * bf = (BloomFilter *)malloc(sizeof(BloomFilter));
     MBArray * array;
 
     if (!bf) {
         return NULL;
     }
 
-    bf->header.max_num_elem = max_num_elem;
-    bf->header.error_rate = error_rate;
-    bf->header.num_hashes = num_hashes;
-    bf->header.bf_version = BF_CURRENT_VERSION;
-    memcpy(bf->header.hash_seeds, hash_seeds, sizeof(uint32_t) * num_hashes);
+    bf->max_num_elem = max_num_elem;
+    bf->error_rate = error_rate;
+    bf->num_hashes = num_hashes;
+    bf->count_correct = 1;
+    bf->bf_version = BF_CURRENT_VERSION;
+    bf->elem_count = 0;
+    bf->array = NULL;
+    memset(bf->reserved, 0, sizeof(uint32_t) * 32);
+    memset(bf->hash_seeds, 0, sizeof(uint32_t) * 256);
+    memcpy(bf->hash_seeds, hash_seeds, sizeof(uint32_t) * num_hashes);
     array = mbarray_Create_Malloc(num_bits);
     if (!array) {
         bloomfilter_Destroy(bf);
         return NULL;
     }
 
-    bf->count_correct = 1;
-    bf->elem_count = 0;
     bf->array = array;
 
     return bf;
@@ -40,19 +43,24 @@ BloomFilter *bloomfilter_Create_Mmap(size_t max_num_elem, double error_rate,
                                 const char * file, BTYPE num_bits, int oflags, int perms,
                                 int *hash_seeds, int num_hashes)
 {
-    BloomFilter * bf = (BloomFilter *)calloc(1, sizeof(BloomFilter));
+    BloomFilter * bf = (BloomFilter *)malloc(sizeof(BloomFilter));
     MBArray * array;
 
     if (!bf) {
         return NULL;
     }
 
-    bf->header.max_num_elem = max_num_elem;
-    bf->header.error_rate = error_rate;
-    bf->header.num_hashes = num_hashes;
-    bf->header.bf_version = BF_CURRENT_VERSION;
-    memcpy(bf->header.hash_seeds, hash_seeds, sizeof(uint32_t) * num_hashes);
-    array = mbarray_Create_Mmap(num_bits, file, (char *)&bf->header, sizeof(Header), oflags, perms);
+    bf->max_num_elem = max_num_elem;
+    bf->error_rate = error_rate;
+    bf->num_hashes = num_hashes;
+    bf->count_correct = 1;
+    bf->bf_version = BF_CURRENT_VERSION;
+    bf->elem_count = 0;
+    bf->array = NULL;
+    memset(bf->reserved, 0,  sizeof(uint32_t) * 32);
+    memset(bf->hash_seeds, 0, sizeof(uint32_t) * 256);
+    memcpy(bf->hash_seeds, hash_seeds, sizeof(uint32_t) * num_hashes);
+    array = mbarray_Create_Mmap(num_bits, file, (char *)bf, sizeof(BloomFilter), oflags, perms);
     if (!array) {
         bloomfilter_Destroy(bf);
         return NULL;
@@ -64,18 +72,14 @@ BloomFilter *bloomfilter_Create_Mmap(size_t max_num_elem, double error_rate,
        By calling mbarray_Header, we copy that header data
        back into this BloomFilter object.
     */
-    if (mbarray_Header((char *)&bf->header, array, sizeof(Header)) == NULL) {
+    if (mbarray_Header((char *)bf, array, sizeof(BloomFilter)) == NULL) {
         bloomfilter_Destroy(bf);
         mbarray_Destroy(array);
         return NULL;
     }
 
-    /* CORE-2946: elem_count isn't (and shouldn't be) in the header, so we have no way of knowing the real elem_count
-       when opening the file. We should add count_correct and elem_count in a separate part of the array object that
-       doesn't affect the _assert_comparable results.
-    */
-    bf->count_correct = 1;
-    bf->elem_count = 0;
+    /* Since we just initialized from a file, we have to
+       fix our pointers */
     bf->array = array;
 
     return bf;
@@ -97,7 +101,7 @@ void bloomfilter_Destroy(BloomFilter * bf)
 void bloomfilter_Print(BloomFilter * bf)
 {
     printf("<BloomFilter num: %lu, error: %0.3f, num_hashes: %d>\n",
-           (unsigned long)bf->header.max_num_elem, bf->header.error_rate, bf->header.num_hashes);
+           (unsigned long)bf->max_num_elem, bf->error_rate, bf->num_hashes);
 }
 
 int bloomfilter_Update(BloomFilter * bf, char * data, int size)
@@ -107,11 +111,9 @@ int bloomfilter_Update(BloomFilter * bf, char * data, int size)
     if (retval) {
         return retval;
     }
-    if (mbarray_Header((char *)&bf->header, array, sizeof(Header)) == NULL) {
+    if (mbarray_Header((char *)bf, array, sizeof(BloomFilter)) == NULL) {
         return 1;
     }
-
-    bf->count_correct = 0;
     bf->array = array;
     return 0;
 }
@@ -119,7 +121,7 @@ int bloomfilter_Update(BloomFilter * bf, char * data, int size)
 
 BloomFilter * bloomfilter_Copy_Template(BloomFilter * src, char * filename, int perms)
 {
-    BloomFilter * bf = (BloomFilter *)calloc(1, sizeof(BloomFilter));
+    BloomFilter * bf = (BloomFilter *)malloc(sizeof(BloomFilter));
     MBArray * array;
 
     if (bf == NULL) {
@@ -132,14 +134,12 @@ BloomFilter * bloomfilter_Copy_Template(BloomFilter * src, char * filename, int 
         return NULL;
     }
 
-    if (mbarray_Header((char *)&bf->header, array, sizeof(Header)) == NULL) {
+    if (mbarray_Header((char *)bf, array, sizeof(BloomFilter)) == NULL) {
         bloomfilter_Destroy(bf);
         mbarray_Destroy(array);
         return NULL;
     }
 
-    bf->count_correct = 1;
-    bf->elem_count = 0;
     bf->array = array;
     return bf;
 }

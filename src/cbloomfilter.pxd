@@ -23,18 +23,15 @@ cdef extern from "mmapbitarray.h":
 
 
 cdef extern from "bloomfilter.h":
-     ctypedef struct Header:
+     ctypedef struct BloomFilter:
          long max_num_elem
          double error_rate
          int num_hashes
          long * hash_seeds
+         MBArray * array
          unsigned char bf_version
-
-     ctypedef struct BloomFilter:
-         Header header
          unsigned char count_correct
          unsigned long long elem_count
-         MBArray * array
 
      ctypedef struct Key:
          long nhash
