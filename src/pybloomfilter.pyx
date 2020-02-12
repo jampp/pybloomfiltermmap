@@ -351,8 +351,6 @@ cdef class BloomFilter:
     def _assert_comparable(self, BloomFilter other):
         error = ValueError("The two %s objects are not the same type (hint, "
                            "use copy_template)" % self.__class__.__name__)
-        if self._bf.array.bits != other._bf.array.bits:
-            raise error
         for prop in ('capacity', 'error_rate', 'num_hashes', 'num_bits', 'hash_seeds'):
             if getattr(self, prop) != getattr(other, prop):
                 raise error
