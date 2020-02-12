@@ -58,7 +58,7 @@ if sys.version_info[0] < 3 and sys.version_info[1] < 7:
     requirements.append('importlib')
 
 setup(name='pybloomfiltermmap',
-      version="0.3.16j",
+      version="0.3.17j",
       author="Michael Axiak, Rob Stacey",
       author_email="mike@axiak.net",
       url="http://github.com/axiak/pybloomfiltermmap/",
