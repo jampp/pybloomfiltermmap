@@ -1452,6 +1452,7 @@ static const char __pyx_k_NotImplementedError[] = "NotImplementedError";
 static const char __pyx_k_src_pybloomfilter_pyx[] = "src/pybloomfilter.pyx";
 static const char __pyx_k_IndeterminateCountError[] = "IndeterminateCountError";
 static const char __pyx_k_I_O_operation_on_closed_file[] = "I/O operation on closed file";
+static const char __pyx_k_Write_operation_on_not_writable[] = "Write operation on not writable file";
 static const char __pyx_k_s_capacity_d_error_0_3f_num_has[] = "<%s capacity: %d, error: %0.3f, num_hashes: %d>";
 static const char __pyx_k_Cannot_access_name_on_an_in_memo[] = "Cannot access .name on an in-memory %s";
 static const char __pyx_k_Cannot_call_copy_on_an_in_memory[] = "Cannot call .copy on an in-memory %s";
@@ -1459,7 +1460,6 @@ static const char __pyx_k_Insufficient_permissions_for_fil[] = "Insufficient per
 static const char __pyx_k_Length_of_s_object_is_unavailabl[] = "Length of %s object is unavailable after intersection or union called.";
 static const char __pyx_k_Some_problem_occured_while_tryin[] = "Some problem occured while trying to add key.";
 static const char __pyx_k_The_two_s_objects_are_not_the_sa[] = "The two %s objects are not the same type (hint, use copy_template)";
-static const char __pyx_k_Write_operation_on_read_only_fil[] = "Write operation on read-only file";
 static const char __pyx_k_error_rate_allowable_range_0_0_1[] = "error_rate allowable range (0.0,1.0) %f";
 static const char __pyx_k_no_default___reduce___due_to_non[] = "no default __reduce__ due to non-trivial __cinit__";
 static PyObject *__pyx_kp_s_;
@@ -1494,7 +1494,7 @@ static PyObject *__pyx_n_s_VERSION;
 static PyObject *__pyx_n_s_VERSION_2;
 static PyObject *__pyx_n_s_ValueError;
 static PyObject *__pyx_n_s_W_OK;
-static PyObject *__pyx_kp_s_Write_operation_on_read_only_fil;
+static PyObject *__pyx_kp_s_Write_operation_on_not_writable;
 static PyObject *__pyx_kp_s__2;
 static PyObject *__pyx_n_s_access;
 static PyObject *__pyx_n_s_add;
@@ -7674,7 +7674,7 @@ static PyObject *__pyx_pf_13pybloomfilter_11BloomFilter_36_assert_open(struct __
  * 
  *     def _assert_writable(self):             # <<<<<<<<<<<<<<
  *         if self._writable == 0:
- *             raise ValueError("Write operation on read-only file")
+ *             raise ValueError("Write operation on not writable file")
  */
 
 /* Python wrapper */
@@ -7701,7 +7701,7 @@ static PyObject *__pyx_pf_13pybloomfilter_11BloomFilter_38_assert_writable(struc
  * 
  *     def _assert_writable(self):
  *         if self._writable == 0:             # <<<<<<<<<<<<<<
- *             raise ValueError("Write operation on read-only file")
+ *             raise ValueError("Write operation on not writable file")
  * 
  */
   __pyx_t_1 = ((__pyx_v_self->_writable == 0) != 0);
@@ -7710,7 +7710,7 @@ static PyObject *__pyx_pf_13pybloomfilter_11BloomFilter_38_assert_writable(struc
     /* "pybloomfilter.pyx":364
  *     def _assert_writable(self):
  *         if self._writable == 0:
- *             raise ValueError("Write operation on read-only file")             # <<<<<<<<<<<<<<
+ *             raise ValueError("Write operation on not writable file")             # <<<<<<<<<<<<<<
  * 
  *     def _assert_comparable(self, BloomFilter other):
  */
@@ -7724,7 +7724,7 @@ static PyObject *__pyx_pf_13pybloomfilter_11BloomFilter_38_assert_writable(struc
  * 
  *     def _assert_writable(self):
  *         if self._writable == 0:             # <<<<<<<<<<<<<<
- *             raise ValueError("Write operation on read-only file")
+ *             raise ValueError("Write operation on not writable file")
  * 
  */
   }
@@ -7734,7 +7734,7 @@ static PyObject *__pyx_pf_13pybloomfilter_11BloomFilter_38_assert_writable(struc
  * 
  *     def _assert_writable(self):             # <<<<<<<<<<<<<<
  *         if self._writable == 0:
- *             raise ValueError("Write operation on read-only file")
+ *             raise ValueError("Write operation on not writable file")
  */
 
   /* function exit code */
@@ -7751,7 +7751,7 @@ static PyObject *__pyx_pf_13pybloomfilter_11BloomFilter_38_assert_writable(struc
 }
 
 /* "pybloomfilter.pyx":366
- *             raise ValueError("Write operation on read-only file")
+ *             raise ValueError("Write operation on not writable file")
  * 
  *     def _assert_comparable(self, BloomFilter other):             # <<<<<<<<<<<<<<
  *         error = ValueError("The two %s objects are not the same type (hint, "
@@ -7896,7 +7896,7 @@ static PyObject *__pyx_pf_13pybloomfilter_11BloomFilter_40_assert_comparable(str
   goto __pyx_L0;
 
   /* "pybloomfilter.pyx":366
- *             raise ValueError("Write operation on read-only file")
+ *             raise ValueError("Write operation on not writable file")
  * 
  *     def _assert_comparable(self, BloomFilter other):             # <<<<<<<<<<<<<<
  *         error = ValueError("The two %s objects are not the same type (hint, "
@@ -9550,7 +9550,7 @@ static __Pyx_StringTabEntry __pyx_string_tab[] = {
   {&__pyx_n_s_VERSION_2, __pyx_k_VERSION_2, sizeof(__pyx_k_VERSION_2), 0, 0, 1, 1},
   {&__pyx_n_s_ValueError, __pyx_k_ValueError, sizeof(__pyx_k_ValueError), 0, 0, 1, 1},
   {&__pyx_n_s_W_OK, __pyx_k_W_OK, sizeof(__pyx_k_W_OK), 0, 0, 1, 1},
-  {&__pyx_kp_s_Write_operation_on_read_only_fil, __pyx_k_Write_operation_on_read_only_fil, sizeof(__pyx_k_Write_operation_on_read_only_fil), 0, 0, 1, 0},
+  {&__pyx_kp_s_Write_operation_on_not_writable, __pyx_k_Write_operation_on_not_writable, sizeof(__pyx_k_Write_operation_on_not_writable), 0, 0, 1, 0},
   {&__pyx_kp_s__2, __pyx_k__2, sizeof(__pyx_k__2), 0, 0, 1, 0},
   {&__pyx_n_s_access, __pyx_k_access, sizeof(__pyx_k_access), 0, 0, 1, 1},
   {&__pyx_n_s_add, __pyx_k_add, sizeof(__pyx_k_add), 0, 0, 1, 1},
@@ -9704,11 +9704,11 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
   /* "pybloomfilter.pyx":364
  *     def _assert_writable(self):
  *         if self._writable == 0:
- *             raise ValueError("Write operation on read-only file")             # <<<<<<<<<<<<<<
+ *             raise ValueError("Write operation on not writable file")             # <<<<<<<<<<<<<<
  * 
  *     def _assert_comparable(self, BloomFilter other):
  */
-  __pyx_tuple__6 = PyTuple_Pack(1, __pyx_kp_s_Write_operation_on_read_only_fil); if (unlikely(!__pyx_tuple__6)) __PYX_ERR(0, 364, __pyx_L1_error)
+  __pyx_tuple__6 = PyTuple_Pack(1, __pyx_kp_s_Write_operation_on_not_writable); if (unlikely(!__pyx_tuple__6)) __PYX_ERR(0, 364, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__6);
   __Pyx_GIVEREF(__pyx_tuple__6);
 

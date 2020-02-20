@@ -361,7 +361,7 @@ cdef class BloomFilter:
 
     def _assert_writable(self):
         if self._writable == 0:
-            raise ValueError("Write operation on read-only file")
+            raise ValueError("Write operation on not writable file")
 
     def _assert_comparable(self, BloomFilter other):
         error = ValueError("The two %s objects are not the same type (hint, "
