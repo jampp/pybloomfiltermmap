@@ -829,7 +829,7 @@ struct __pyx_obj_13pybloomfilter_BloomFilter {
   BloomFilter *_bf;
   int _closed;
   int _in_memory;
-  int _read_only;
+  int _writable;
   PyObject *ReadFile;
 };
 
@@ -2620,7 +2620,6 @@ static int __pyx_pf_13pybloomfilter_11BloomFilter___cinit__(struct __pyx_obj_13p
   Py_ssize_t __pyx_t_14;
   PyObject *(*__pyx_t_15)(PyObject *);
   PyObject *__pyx_t_16;
-  int __pyx_t_17;
   __Pyx_RefNannySetupContext("__cinit__", 0);
   __Pyx_INCREF(__pyx_v_mode);
 
@@ -2629,7 +2628,7 @@ static int __pyx_pf_13pybloomfilter_11BloomFilter___cinit__(struct __pyx_obj_13p
  *         cdef int _capacity
  *         self._closed = 0             # <<<<<<<<<<<<<<
  *         self._in_memory = 0
- *         self._read_only = 0
+ *         self._writable = 1
  */
   __pyx_v_self->_closed = 0;
 
@@ -2637,7 +2636,7 @@ static int __pyx_pf_13pybloomfilter_11BloomFilter___cinit__(struct __pyx_obj_13p
  *         cdef int _capacity
  *         self._closed = 0
  *         self._in_memory = 0             # <<<<<<<<<<<<<<
- *         self._read_only = 0
+ *         self._writable = 1
  *         self.ReadFile = self.__class__.ReadFile
  */
   __pyx_v_self->_in_memory = 0;
@@ -2645,15 +2644,15 @@ static int __pyx_pf_13pybloomfilter_11BloomFilter___cinit__(struct __pyx_obj_13p
   /* "pybloomfilter.pyx":82
  *         self._closed = 0
  *         self._in_memory = 0
- *         self._read_only = 0             # <<<<<<<<<<<<<<
+ *         self._writable = 1             # <<<<<<<<<<<<<<
  *         self.ReadFile = self.__class__.ReadFile
  * 
  */
-  __pyx_v_self->_read_only = 0;
+  __pyx_v_self->_writable = 1;
 
   /* "pybloomfilter.pyx":83
  *         self._in_memory = 0
- *         self._read_only = 0
+ *         self._writable = 1
  *         self.ReadFile = self.__class__.ReadFile             # <<<<<<<<<<<<<<
  * 
  *         if filename is NoConstruct:
@@ -4019,7 +4018,7 @@ static int __pyx_pf_13pybloomfilter_11BloomFilter___cinit__(struct __pyx_obj_13p
  *                 else:
  *                     cpython.PyErr_NoMemory()             # <<<<<<<<<<<<<<
  * 
- *         self._read_only = not (self._in_memory or 'w' in mode)
+ *         self._writable = self._in_memory or 'w' in mode
  */
       /*else*/ {
         __pyx_t_16 = PyErr_NoMemory(); if (unlikely(__pyx_t_16 == ((PyObject *)NULL))) __PYX_ERR(0, 179, __pyx_L1_error)
@@ -4039,21 +4038,19 @@ static int __pyx_pf_13pybloomfilter_11BloomFilter___cinit__(struct __pyx_obj_13p
   /* "pybloomfilter.pyx":181
  *                     cpython.PyErr_NoMemory()
  * 
- *         self._read_only = not (self._in_memory or 'w' in mode)             # <<<<<<<<<<<<<<
+ *         self._writable = self._in_memory or 'w' in mode             # <<<<<<<<<<<<<<
  * 
  *     def __dealloc__(self):
  */
-  __pyx_t_4 = (__pyx_v_self->_in_memory != 0);
-  if (!__pyx_t_4) {
+  if (!__pyx_v_self->_in_memory) {
   } else {
-    __pyx_t_3 = __pyx_t_4;
+    __pyx_t_7 = __pyx_v_self->_in_memory;
     goto __pyx_L21_bool_binop_done;
   }
-  __pyx_t_4 = (__Pyx_PySequence_ContainsTF(__pyx_n_s_w, __pyx_v_mode, Py_EQ)); if (unlikely(__pyx_t_4 < 0)) __PYX_ERR(0, 181, __pyx_L1_error)
-  __pyx_t_17 = (__pyx_t_4 != 0);
-  __pyx_t_3 = __pyx_t_17;
+  __pyx_t_3 = (__Pyx_PySequence_ContainsTF(__pyx_n_s_w, __pyx_v_mode, Py_EQ)); if (unlikely(__pyx_t_3 < 0)) __PYX_ERR(0, 181, __pyx_L1_error)
+  __pyx_t_7 = __pyx_t_3;
   __pyx_L21_bool_binop_done:;
-  __pyx_v_self->_read_only = (!__pyx_t_3);
+  __pyx_v_self->_writable = __pyx_t_7;
 
   /* "pybloomfilter.pyx":69
  *     cdef public ReadFile
@@ -4090,7 +4087,7 @@ static int __pyx_pf_13pybloomfilter_11BloomFilter___cinit__(struct __pyx_obj_13p
 }
 
 /* "pybloomfilter.pyx":183
- *         self._read_only = not (self._in_memory or 'w' in mode)
+ *         self._writable = self._in_memory or 'w' in mode
  * 
  *     def __dealloc__(self):             # <<<<<<<<<<<<<<
  *         cbloomfilter.bloomfilter_Destroy(self._bf)
@@ -4131,7 +4128,7 @@ static void __pyx_pf_13pybloomfilter_11BloomFilter_2__dealloc__(struct __pyx_obj
   __pyx_v_self->_bf = NULL;
 
   /* "pybloomfilter.pyx":183
- *         self._read_only = not (self._in_memory or 'w' in mode)
+ *         self._writable = self._in_memory or 'w' in mode
  * 
  *     def __dealloc__(self):             # <<<<<<<<<<<<<<
  *         cbloomfilter.bloomfilter_Destroy(self._bf)
@@ -7676,7 +7673,7 @@ static PyObject *__pyx_pf_13pybloomfilter_11BloomFilter_36_assert_open(struct __
  *             raise ValueError("I/O operation on closed file")
  * 
  *     def _assert_writable(self):             # <<<<<<<<<<<<<<
- *         if self._read_only != 0:
+ *         if self._writable == 0:
  *             raise ValueError("Write operation on read-only file")
  */
 
@@ -7703,16 +7700,16 @@ static PyObject *__pyx_pf_13pybloomfilter_11BloomFilter_38_assert_writable(struc
   /* "pybloomfilter.pyx":363
  * 
  *     def _assert_writable(self):
- *         if self._read_only != 0:             # <<<<<<<<<<<<<<
+ *         if self._writable == 0:             # <<<<<<<<<<<<<<
  *             raise ValueError("Write operation on read-only file")
  * 
  */
-  __pyx_t_1 = ((__pyx_v_self->_read_only != 0) != 0);
+  __pyx_t_1 = ((__pyx_v_self->_writable == 0) != 0);
   if (unlikely(__pyx_t_1)) {
 
     /* "pybloomfilter.pyx":364
  *     def _assert_writable(self):
- *         if self._read_only != 0:
+ *         if self._writable == 0:
  *             raise ValueError("Write operation on read-only file")             # <<<<<<<<<<<<<<
  * 
  *     def _assert_comparable(self, BloomFilter other):
@@ -7726,7 +7723,7 @@ static PyObject *__pyx_pf_13pybloomfilter_11BloomFilter_38_assert_writable(struc
     /* "pybloomfilter.pyx":363
  * 
  *     def _assert_writable(self):
- *         if self._read_only != 0:             # <<<<<<<<<<<<<<
+ *         if self._writable == 0:             # <<<<<<<<<<<<<<
  *             raise ValueError("Write operation on read-only file")
  * 
  */
@@ -7736,7 +7733,7 @@ static PyObject *__pyx_pf_13pybloomfilter_11BloomFilter_38_assert_writable(struc
  *             raise ValueError("I/O operation on closed file")
  * 
  *     def _assert_writable(self):             # <<<<<<<<<<<<<<
- *         if self._read_only != 0:
+ *         if self._writable == 0:
  *             raise ValueError("Write operation on read-only file")
  */
 
@@ -8755,7 +8752,7 @@ static PyObject *__pyx_pf_13pybloomfilter_11BloomFilter_46open(PyTypeObject *__p
 
 /* "pybloomfilter.pyx":67
  *     cdef int _in_memory
- *     cdef int _read_only
+ *     cdef int _writable
  *     cdef public ReadFile             # <<<<<<<<<<<<<<
  * 
  *     def __cinit__(self, capacity, double error_rate, filename=None, mode='rw+', int perm=0755, seed=None):
@@ -9706,7 +9703,7 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
 
   /* "pybloomfilter.pyx":364
  *     def _assert_writable(self):
- *         if self._read_only != 0:
+ *         if self._writable == 0:
  *             raise ValueError("Write operation on read-only file")             # <<<<<<<<<<<<<<
  * 
  *     def _assert_comparable(self, BloomFilter other):

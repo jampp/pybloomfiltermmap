@@ -63,7 +63,7 @@ cdef class BloomFilter:
     cdef cbloomfilter.BloomFilter * _bf
     cdef int _closed
     cdef int _in_memory
-    cdef int _read_only
+    cdef int _writable
     cdef public ReadFile
 
     def __cinit__(self, capacity, double error_rate, filename=None, mode='rw+', int perm=0755, seed=None):
@@ -79,7 +79,7 @@ cdef class BloomFilter:
         cdef int _capacity
         self._closed = 0
         self._in_memory = 0
-        self._read_only = 0
+        self._writable = 1
         self.ReadFile = self.__class__.ReadFile
 
         if filename is NoConstruct:
@@ -178,7 +178,7 @@ cdef class BloomFilter:
                 else:
                     cpython.PyErr_NoMemory()
 
-        self._read_only = not (self._in_memory or 'w' in mode)
+        self._writable = self._in_memory or 'w' in mode
 
     def __dealloc__(self):
         cbloomfilter.bloomfilter_Destroy(self._bf)
@@ -360,7 +360,7 @@ cdef class BloomFilter:
             raise ValueError("I/O operation on closed file")
 
     def _assert_writable(self):
-        if self._read_only != 0:
+        if self._writable == 0:
             raise ValueError("Write operation on read-only file")
 
     def _assert_comparable(self, BloomFilter other):
