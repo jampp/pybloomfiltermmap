@@ -304,7 +304,7 @@ class SimpleTestCase(unittest.TestCase):
                 with self.assertRaises(ValueError):
                     bf1.intersection(bf2)
 
-    def test_write_operation_on_writable_file_does_not_raise_exception(self):
+    def test_write_operation_on_writable_files_does_not_raise_exception(self):
         with tempfile.NamedTemporaryFile() as tmp1:
             with tempfile.NamedTemporaryFile() as tmp2:
                 bf1 = pybloomfilter.BloomFilter(1000, 0.01, tmp1.name)
@@ -319,6 +319,16 @@ class SimpleTestCase(unittest.TestCase):
                 bf1.union(bf2)
                 bf1.intersection(bf2)
 
+                bf1.close()
+
+                bf3 = pybloomfilter.BloomFilter.open(tmp1.name, mode='rw')
+
+                bf3.clear_all()
+                bf3.add('test')
+                bf3 |= bf2
+                bf3 &= bf2
+                bf3.union(bf2)
+                bf3.intersection(bf2)
 
 def suite():
     suite = unittest.TestSuite()
