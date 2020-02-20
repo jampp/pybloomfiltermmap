@@ -1,4 +1,4 @@
-VERSION = (0, 3, 17)
+VERSION = (0, 3, 18)
 AUTHOR = "Michael Axiak"
 
 __VERSION__ = VERSION
@@ -63,6 +63,7 @@ cdef class BloomFilter:
     cdef cbloomfilter.BloomFilter * _bf
     cdef int _closed
     cdef int _in_memory
+    cdef int _read_only
     cdef public ReadFile
 
     def __cinit__(self, capacity, double error_rate, filename=None, mode='rw+', int perm=0755, seed=None):
@@ -78,6 +79,7 @@ cdef class BloomFilter:
         cdef int _capacity
         self._closed = 0
         self._in_memory = 0
+        self._read_only = 0
         self.ReadFile = self.__class__.ReadFile
 
         if filename is NoConstruct:
@@ -176,6 +178,8 @@ cdef class BloomFilter:
                 else:
                     cpython.PyErr_NoMemory()
 
+        self._read_only = not (self._in_memory or 'w' in mode)
+
     def __dealloc__(self):
         cbloomfilter.bloomfilter_Destroy(self._bf)
         self._bf = NULL
@@ -243,6 +247,7 @@ cdef class BloomFilter:
 
     def clear_all(self):
         self._assert_open()
+        self._assert_writable()
         cbloomfilter.mbarray_ClearAll(self._bf.array)
 
     def __contains__(self, item):
@@ -278,6 +283,7 @@ cdef class BloomFilter:
 
     def add(self, item):
         self._assert_open()
+        self._assert_writable()
         cdef cbloomfilter.Key key
         if isinstance(item, bytes):
             key.shash = item
@@ -316,6 +322,7 @@ cdef class BloomFilter:
 
     def __ior__(self, BloomFilter other):
         self._assert_open()
+        self._assert_writable()
         self._assert_comparable(other)
         cbloomfilter.mbarray_Or(self._bf.array, other._bf.array)
         self._bf.count_correct = 0
@@ -323,6 +330,7 @@ cdef class BloomFilter:
 
     def union(self, BloomFilter other):
         self._assert_open()
+        self._assert_writable()
         other._assert_open()
         self._assert_comparable(other)
         cbloomfilter.mbarray_Or(self._bf.array, other._bf.array)
@@ -331,6 +339,7 @@ cdef class BloomFilter:
 
     def __iand__(self, BloomFilter other):
         self._assert_open()
+        self._assert_writable()
         other._assert_open()
         self._assert_comparable(other)
         cbloomfilter.mbarray_And(self._bf.array, other._bf.array)
@@ -339,6 +348,7 @@ cdef class BloomFilter:
 
     def intersection(self, BloomFilter other):
         self._assert_open()
+        self._assert_writable()
         other._assert_open()
         self._assert_comparable(other)
         cbloomfilter.mbarray_And(self._bf.array, other._bf.array)
@@ -348,6 +358,10 @@ cdef class BloomFilter:
     def _assert_open(self):
         if self._closed != 0:
             raise ValueError("I/O operation on closed file")
+
+    def _assert_writable(self):
+        if self._read_only != 0:
+            raise ValueError("Write operation on read-only file")
 
     def _assert_comparable(self, BloomFilter other):
         error = ValueError("The two %s objects are not the same type (hint, "
