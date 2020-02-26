@@ -277,6 +277,59 @@ class SimpleTestCase(unittest.TestCase):
                 self.assertTrue(all(i in bf2 for i in range(50, 150)))
                 self.assertTrue(all(i not in bf2 for i in range(150, 200)))
 
+    def test_write_operation_on_readonly_file_raises_exception(self):
+        with tempfile.NamedTemporaryFile() as tmp1:
+            with tempfile.NamedTemporaryFile() as tmp2:
+                pybloomfilter.BloomFilter(1000, 0.01, tmp1.name)
+                bf1 = pybloomfilter.BloomFilter.open(tmp1.name)
+
+                bf2 = bf1.copy_template(tmp2.name)
+                bf2.add('bf2')
+
+                with self.assertRaises(ValueError):
+                    bf1.clear_all()
+
+                with self.assertRaises(ValueError):
+                    bf1.add('test')
+
+                with self.assertRaises(ValueError):
+                    bf1 |= bf2
+
+                with self.assertRaises(ValueError):
+                    bf1 &= bf2
+
+                with self.assertRaises(ValueError):
+                    bf1.union(bf2)
+
+                with self.assertRaises(ValueError):
+                    bf1.intersection(bf2)
+
+    def test_write_operation_on_writable_files_does_not_raise_exception(self):
+        with tempfile.NamedTemporaryFile() as tmp1:
+            with tempfile.NamedTemporaryFile() as tmp2:
+                bf1 = pybloomfilter.BloomFilter(1000, 0.01, tmp1.name)
+
+                bf2 = bf1.copy_template(tmp2.name)
+                bf2.add('bf2')
+
+                bf1.clear_all()
+                bf1.add('test')
+                bf1 |= bf2
+                bf1 &= bf2
+                bf1.union(bf2)
+                bf1.intersection(bf2)
+
+                bf1.close()
+
+                bf3 = pybloomfilter.BloomFilter.open(tmp1.name, mode='rw')
+
+                bf3.clear_all()
+                bf3.add('test')
+                bf3 |= bf2
+                bf3 &= bf2
+                bf3.union(bf2)
+                bf3.intersection(bf2)
+
 def suite():
     suite = unittest.TestSuite()
     suite.addTest(unittest.makeSuite(SimpleTestCase))
