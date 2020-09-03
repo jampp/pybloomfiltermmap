@@ -35,7 +35,7 @@ and you should be set.
 
 ### Throubleshooting
 
-Mac users may face problems when are installing the package, it happens because on the instalation build, xcon tries to import a module that is provided by OpenSSL, and most of the cases it fails because it can't find the module.
+Mac users may face problems when installing the package, it happens because on the installation build, xcon tries to import a module that is provided by OpenSSL, and most of the cases it fails because it can't find the module.
 What to do in these cases:
  - Make sure openssl is installed `brew install openssl`
  - Set an environment variable that tells the path to the openssl installed `export CFLAGS="-L/usr/local/opt/openssl/lib -I/usr/local/opt/openssl/include"`
@@ -43,4 +43,3 @@ What to do in these cases:
 ## License
 
 See the LICENSE file. It's under the MIT License.
-
