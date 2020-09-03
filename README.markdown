@@ -39,6 +39,7 @@ Mac users may face problems when installing the package, it happens because on t
 What to do in these cases:
  - Make sure openssl is installed `brew install openssl`
  - Set an environment variable that tells the path to the openssl installed `export CFLAGS="-L/usr/local/opt/openssl/lib -I/usr/local/opt/openssl/include"`
+ - You may need extra flags to the compiler, check with `brew info openssl`
 
 ## License
 
