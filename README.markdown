@@ -33,7 +33,7 @@ To install:
 
 and you should be set.
 
-### Throubleshooting
+### Troubleshooting
 
 Mac users may face problems when installing the package, it happens because on the build, the compiler tries to import a module that is provided by OpenSSL, and most of the cases it fails because it can't find the module.
 What to do in these cases:
