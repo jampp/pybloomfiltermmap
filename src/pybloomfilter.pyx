@@ -76,7 +76,7 @@ cdef class BloomFilter:
         cdef char * seeds
         cdef long long num_bits
         cdef int oflags
-        cdef int _capacity
+        cdef long _capacity
         self._closed = 0
         self._in_memory = 0
         self._writable = 1
@@ -88,7 +88,7 @@ cdef class BloomFilter:
         if capacity is self.ReadFile:
             # Cannot create if we read
             mode = mode.replace('+','')
-            
+
             _capacity = 0
             if not os.path.exists(filename):
                 raise OSError("File %s not found" % filename)
