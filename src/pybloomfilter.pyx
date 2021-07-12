@@ -325,7 +325,7 @@ cdef class BloomFilter:
 
         return copy
 
-    def copy(self, filename):
+    def copy(self, filename=None):
         self._assert_open()
         if not self._in_memory and filename:
             # mmap to mmap. Just copy file and open it
@@ -432,6 +432,8 @@ cdef class BloomFilter:
 
     def to_base64(self):
         self._assert_open()
+        if self._in_memory:
+            raise NotImplementedError('Cannot convert an in-memory %s to base64' % self.__class__.__name__)
         bfile = open(self.name, 'rb')
         result = b64encode(zlib.compress(b64encode(zlib.compress(bfile.read(), 9))))
         bfile.close()
