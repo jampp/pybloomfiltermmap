@@ -8,8 +8,8 @@
 
 #include "bloomfilter.h"
 
-BloomFilter *bloomfilter_Create_Malloc(size_t max_num_elem, double error_rate,
-                                BTYPE num_bits, int *hash_seeds, int num_hashes)
+BloomFilter *bloomfilter_Create_Malloc(uint64_t max_num_elem, double error_rate,
+                                BTYPE num_bits, uint32_t *hash_seeds, uint32_t num_hashes, unsigned char bf_version)
 {
     BloomFilter * bf = (BloomFilter *)calloc(1, sizeof(BloomFilter));
     MBArray * array;
@@ -22,11 +22,11 @@ BloomFilter *bloomfilter_Create_Malloc(size_t max_num_elem, double error_rate,
     bf->error_rate = error_rate;
     bf->num_hashes = num_hashes;
     bf->count_correct = 1;
-    bf->bf_version = BF_CURRENT_VERSION;
+    bf->bf_version = bf_version;
     bf->elem_count = 0;
     bf->array = NULL;
     memcpy(bf->hash_seeds, hash_seeds, sizeof(uint32_t) * num_hashes);
-    array = mbarray_Create_Malloc(num_bits);
+    array = mbarray_Create_Malloc(num_bits, (char *)bf, sizeof(BloomFilter));
     if (!array) {
         bloomfilter_Destroy(bf);
         return NULL;
@@ -37,9 +37,9 @@ BloomFilter *bloomfilter_Create_Malloc(size_t max_num_elem, double error_rate,
     return bf;
 }
 
-BloomFilter *bloomfilter_Create_Mmap(size_t max_num_elem, double error_rate,
+BloomFilter *bloomfilter_Create_Mmap(uint64_t max_num_elem, double error_rate,
                                 const char * file, BTYPE num_bits, int oflags, int perms,
-                                int *hash_seeds, int num_hashes)
+                                uint32_t *hash_seeds, uint32_t num_hashes, unsigned char bf_version)
 {
     BloomFilter * bf = (BloomFilter *)calloc(1, sizeof(BloomFilter));
     MBArray * array;
@@ -52,7 +52,7 @@ BloomFilter *bloomfilter_Create_Mmap(size_t max_num_elem, double error_rate,
     bf->error_rate = error_rate;
     bf->num_hashes = num_hashes;
     bf->count_correct = 1;
-    bf->bf_version = BF_CURRENT_VERSION;
+    bf->bf_version = bf_version;
     bf->elem_count = 0;
     bf->array = NULL;
     memcpy(bf->hash_seeds, hash_seeds, sizeof(uint32_t) * num_hashes);
@@ -141,13 +141,22 @@ BloomFilter * bloomfilter_Copy_Template(BloomFilter * src, char * filename, int 
 }
 
 
-BTYPE _hash_long(uint32_t hash_seed, Key * key) {
+BTYPE _hash_long32(uint32_t hash_seed, Key * key) {
     Key newKey = {
         .shash = (char *)&key->nhash,
         .nhash = sizeof(key->nhash)
     };
 
-    return _hash_char(hash_seed, &newKey);
+    return _hash_char32(hash_seed, &newKey);
+}
+
+BTYPE _hash_long64(uint32_t hash_seed, Key * key) {
+    Key newKey = {
+        .shash = (char *)&key->nhash,
+        .nhash = sizeof(key->nhash)
+    };
+
+    return _hash_char64(hash_seed, &newKey);
 }
 
 /*
@@ -191,8 +200,12 @@ BYPTE _hash_char(uint32_t hash_seed, Key * key) {
 /* CODE TO USE xxHash */
 
 #include "xxhash.h"
-BTYPE _hash_char(uint32_t hash_seed, Key * key) {
+BTYPE _hash_char32(uint32_t hash_seed, Key * key) {
     return XXH32(key->shash, key->nhash, hash_seed);
+}
+
+BTYPE _hash_char64(uint32_t hash_seed, Key * key) {
+    return XXH64(key->shash, key->nhash, hash_seed);
 }
 
 

@@ -1,4 +1,4 @@
-VERSION = (0, 3, 18)
+VERSION = (0, 4, 0)
 AUTHOR = "Michael Axiak"
 
 __VERSION__ = VERSION
@@ -6,6 +6,7 @@ __VERSION__ = VERSION
 
 cimport cbloomfilter
 cimport cpython
+from cbloomfilter cimport uint32_t, uint64_t, BTYPE
 
 import random
 import os
@@ -15,7 +16,6 @@ import array
 import zlib
 import shutil
 import sys
-import base64
 import operator
 
 from base64 import b64encode, b64decode
@@ -66,17 +66,28 @@ cdef class BloomFilter:
     cdef int _writable
     cdef public ReadFile
 
-    def __cinit__(self, capacity, double error_rate, filename=None, mode='rw+', int perm=0755, seed=None):
+    def __cinit__(
+            self,
+            capacity,
+            double error_rate,
+            filename=None,
+            mode='rw+',
+            int perm=0755,
+            seed=None,
+            unsigned char version=cbloomfilter.BF_CURRENT_VERSION,
+    ):
 
         """
         mode: chmod type access to file, default rw+ for creating the bloom filter
         perm, permissions for when the file is created, not opened. 0755 means Read, Write, Execute access for owner,
         read, execute for group owner and others.
+        seed: If set, seed to use to generate the hash_seeds.
+        bf_version: Version to use when creating a new BloomFilter.
         """
         cdef char * seeds
-        cdef long long num_bits
+        cdef BTYPE num_bits
         cdef int oflags
-        cdef long _capacity
+        cdef uint64_t _capacity
         self._closed = 0
         self._in_memory = 0
         self._writable = 1
@@ -84,6 +95,9 @@ cdef class BloomFilter:
 
         if filename is NoConstruct:
             return
+
+        if not 1 <= version <= cbloomfilter.BF_CURRENT_VERSION:
+            raise ValueError("Invalid %s version" % self.__class__.__name__)
 
         if capacity is self.ReadFile:
             # Cannot create if we read
@@ -109,9 +123,18 @@ cdef class BloomFilter:
                                                            0,
                                                            oflags,
                                                            perm,
-                                                           NULL, 0)
+                                                           NULL, 0,
+                                                           version)
                 if self._bf is NULL:
                     raise ValueError("Invalid %s file: %s" % (self.__class__.__name__, filename))
+                elif self._bf.bf_version > cbloomfilter.BF_CURRENT_VERSION:
+                        version = self._bf.bf_version
+                        self.close()
+                        raise ValueError(
+                            "%s version %d is not supported by this version of the library." % (
+                                self.__class__.__name__, version
+                            )
+                        )
             else:
                 raise OSError(eno.ENOENT, '%s: %s' % (os.strerror(eno.ENOENT),
                                                       filename))
@@ -162,15 +185,17 @@ cdef class BloomFilter:
                                                        num_bits,
                                                        oflags,
                                                        perm,
-                                                       <int *>seeds,
-                                                       num_hashes)
+                                                       <uint32_t *>seeds,
+                                                       num_hashes,
+                                                       version)
             else:
                 self._in_memory = 1
                 self._bf = cbloomfilter.bloomfilter_Create_Malloc(_capacity,
                                                        error_rate,
                                                        num_bits,
-                                                       <int *>seeds,
-                                                       num_hashes)
+                                                       <uint32_t *>seeds,
+                                                       num_hashes,
+                                                       version)
             if self._bf is NULL:
                 if filename:
                     raise OSError(errno, '%s: %s' % (os.strerror(errno),
@@ -194,6 +219,13 @@ cdef class BloomFilter:
             )
             return result
 
+    property hash_func:
+        def __get__(self):
+            self._assert_open()
+            if self.version >= 2 and self.num_bits >= cbloomfilter.HASH64_THRESHOLD:
+                return "xxhash64"
+            return "xxhash32"
+
     property capacity:
         def __get__(self):
             self._assert_open()
@@ -214,14 +246,14 @@ cdef class BloomFilter:
             self._assert_open()
             return self._bf.array.bits
 
+    property version:
+        def __get__(self):
+            self._assert_open()
+            return self._bf.bf_version
+
     property name:
         def __get__(self):
             self._assert_open()
-            if self._in_memory:
-                raise NotImplementedError('Cannot access .name on an '
-                                          'in-memory %s' %
-                                          self.__class__.__name__)
-
             if self._bf.array.filename is not NULL:
                 return self._bf.array.filename
             else:
@@ -234,8 +266,8 @@ cdef class BloomFilter:
     def __repr__(self):
         self._assert_open()
         my_name = self.__class__.__name__
-        return '<%s capacity: %d, error: %0.3f, num_hashes: %d>' % (
-            my_name, self._bf.max_num_elem, self._bf.error_rate,
+        return '<%s version: %d, capacity: %d, error: %0.3f, num_hashes: %d>' % (
+            my_name, self._bf.bf_version, self._bf.max_num_elem, self._bf.error_rate,
             self._bf.num_hashes)
 
     def __str__(self):
@@ -243,7 +275,7 @@ cdef class BloomFilter:
 
     def sync(self):
         self._assert_open()
-        cbloomfilter.mbarray_Sync(self._bf.array)
+        return cbloomfilter.mbarray_Sync(self._bf.array)
 
     def clear_all(self):
         self._assert_open()
@@ -265,25 +297,46 @@ cdef class BloomFilter:
             key.nhash = hash(item)
         return cbloomfilter.bloomfilter_Test(self._bf, &key) == 1
 
-    def copy_template(self, filename, perm=0755):
+    def copy_template(self, filename, mode='rw+', perm=0755):
         self._assert_open()
         cdef BloomFilter copy = BloomFilter(0, 0, NoConstruct)
-        if os.path.exists(filename):
-            os.unlink(filename)
-        copy._bf = cbloomfilter.bloomfilter_Copy_Template(self._bf, filename.encode(), perm)
+
+        if filename:
+            oflags = construct_mode(mode)
+            if oflags & os.O_CREAT and os.path.exists(filename):
+                os.unlink(filename)
+            copy._bf = cbloomfilter.bloomfilter_Create_Mmap(self._bf.max_num_elem,
+                                                            self._bf.error_rate,
+                                                            filename.encode(),
+                                                            self._bf.array.bits,
+                                                            oflags,
+                                                            perm,
+                                                            self._bf.hash_seeds,
+                                                            self._bf.num_hashes,
+                                                            self._bf.bf_version)
+        else:
+            copy._in_memory = 1
+            copy._bf = cbloomfilter.bloomfilter_Create_Malloc(self._bf.max_num_elem,
+                                                              self._bf.error_rate,
+                                                              self._bf.array.bits,
+                                                              self._bf.hash_seeds,
+                                                              self._bf.num_hashes,
+                                                              self._bf.bf_version)
+
         return copy
 
     def copy(self, filename):
         self._assert_open()
-        if self._in_memory:
-            raise NotImplementedError('Cannot call .copy on an in-memory %s' %
-                                      self.__class__.__name__)
-        shutil.copy(self._bf.array.filename, filename)
-        return self.__class__(self.ReadFile, 0.1, filename, perm=0)
+        if not self._in_memory and filename:
+            # mmap to mmap. Just copy file and open it
+            shutil.copy(self._bf.array.filename, filename)
+            return self.__class__(self.ReadFile, 0.1, filename, perm=0)
 
-    def add(self, item):
-        self._assert_open()
-        self._assert_writable()
+        copy = self.copy_template(filename)
+        copy |= self
+        return copy
+
+    cdef _add(self, item):
         cdef cbloomfilter.Key key
         if isinstance(item, bytes):
             key.shash = item
@@ -301,10 +354,16 @@ cdef class BloomFilter:
             raise RuntimeError("Some problem occured while trying to add key.")
         return bool(result)
 
+    def add(self, item):
+        self._assert_open()
+        self._assert_writable()
+        return self._add(item)
+
     def update(self, iterable):
         self._assert_open()
+        self._assert_writable()
         for item in iterable:
-            self.add(item)
+            self._add(item)
 
     def __len__(self):
         self._assert_open()
@@ -366,7 +425,7 @@ cdef class BloomFilter:
     def _assert_comparable(self, BloomFilter other):
         error = ValueError("The two %s objects are not the same type (hint, "
                            "use copy_template)" % self.__class__.__name__)
-        for prop in ('capacity', 'error_rate', 'num_hashes', 'num_bits', 'hash_seeds'):
+        for prop in ('version', 'capacity', 'error_rate', 'num_hashes', 'num_bits', 'hash_seeds'):
             if getattr(self, prop) != getattr(other, prop):
                 raise error
         return
