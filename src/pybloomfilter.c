@@ -6036,7 +6036,7 @@ static int __pyx_pf_13pybloomfilter_11BloomFilter_14__contains__(struct __pyx_ob
  *             key.nhash = hash(item)
  *         return cbloomfilter.bloomfilter_Test(self._bf, &key) == 1             # <<<<<<<<<<<<<<
  * 
- *     def copy_template(self, filename, mode='rw+', perm=0755):
+ *     def copy_template(self, filename=None, mode='rw+', perm=0755):
  */
   __pyx_r = (bloomfilter_Test(__pyx_v_self->_bf, (&__pyx_v_key)) == 1);
   goto __pyx_L0;
@@ -6065,7 +6065,7 @@ static int __pyx_pf_13pybloomfilter_11BloomFilter_14__contains__(struct __pyx_ob
 /* "pybloomfilter.pyx":300
  *         return cbloomfilter.bloomfilter_Test(self._bf, &key) == 1
  * 
- *     def copy_template(self, filename, mode='rw+', perm=0755):             # <<<<<<<<<<<<<<
+ *     def copy_template(self, filename=None, mode='rw+', perm=0755):             # <<<<<<<<<<<<<<
  *         self._assert_open()
  *         cdef BloomFilter copy = BloomFilter(0, 0, NoConstruct)
  */
@@ -6082,6 +6082,7 @@ static PyObject *__pyx_pw_13pybloomfilter_11BloomFilter_17copy_template(PyObject
   {
     static PyObject **__pyx_pyargnames[] = {&__pyx_n_s_filename,&__pyx_n_s_mode,&__pyx_n_s_perm,0};
     PyObject* values[3] = {0,0,0};
+    values[0] = ((PyObject *)Py_None);
     values[1] = ((PyObject *)__pyx_kp_s_rw);
     values[2] = ((PyObject *)__pyx_int_493);
     if (unlikely(__pyx_kwds)) {
@@ -6100,8 +6101,10 @@ static PyObject *__pyx_pw_13pybloomfilter_11BloomFilter_17copy_template(PyObject
       kw_args = PyDict_Size(__pyx_kwds);
       switch (pos_args) {
         case  0:
-        if (likely((values[0] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_filename)) != 0)) kw_args--;
-        else goto __pyx_L5_argtuple_error;
+        if (kw_args > 0) {
+          PyObject* value = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_filename);
+          if (value) { values[0] = value; kw_args--; }
+        }
         CYTHON_FALLTHROUGH;
         case  1:
         if (kw_args > 0) {
@@ -6125,7 +6128,8 @@ static PyObject *__pyx_pw_13pybloomfilter_11BloomFilter_17copy_template(PyObject
         case  2: values[1] = PyTuple_GET_ITEM(__pyx_args, 1);
         CYTHON_FALLTHROUGH;
         case  1: values[0] = PyTuple_GET_ITEM(__pyx_args, 0);
-        break;
+        CYTHON_FALLTHROUGH;
+        case  0: break;
         default: goto __pyx_L5_argtuple_error;
       }
     }
@@ -6135,7 +6139,7 @@ static PyObject *__pyx_pw_13pybloomfilter_11BloomFilter_17copy_template(PyObject
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("copy_template", 0, 1, 3, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 300, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("copy_template", 0, 0, 3, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 300, __pyx_L3_error)
   __pyx_L3_error:;
   __Pyx_AddTraceback("pybloomfilter.BloomFilter.copy_template", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
@@ -6165,7 +6169,7 @@ static PyObject *__pyx_pf_13pybloomfilter_11BloomFilter_16copy_template(struct _
 
   /* "pybloomfilter.pyx":301
  * 
- *     def copy_template(self, filename, mode='rw+', perm=0755):
+ *     def copy_template(self, filename=None, mode='rw+', perm=0755):
  *         self._assert_open()             # <<<<<<<<<<<<<<
  *         cdef BloomFilter copy = BloomFilter(0, 0, NoConstruct)
  * 
@@ -6190,7 +6194,7 @@ static PyObject *__pyx_pf_13pybloomfilter_11BloomFilter_16copy_template(struct _
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   /* "pybloomfilter.pyx":302
- *     def copy_template(self, filename, mode='rw+', perm=0755):
+ *     def copy_template(self, filename=None, mode='rw+', perm=0755):
  *         self._assert_open()
  *         cdef BloomFilter copy = BloomFilter(0, 0, NoConstruct)             # <<<<<<<<<<<<<<
  * 
@@ -6424,7 +6428,7 @@ static PyObject *__pyx_pf_13pybloomfilter_11BloomFilter_16copy_template(struct _
   /* "pybloomfilter.pyx":300
  *         return cbloomfilter.bloomfilter_Test(self._bf, &key) == 1
  * 
- *     def copy_template(self, filename, mode='rw+', perm=0755):             # <<<<<<<<<<<<<<
+ *     def copy_template(self, filename=None, mode='rw+', perm=0755):             # <<<<<<<<<<<<<<
  *         self._assert_open()
  *         cdef BloomFilter copy = BloomFilter(0, 0, NoConstruct)
  */

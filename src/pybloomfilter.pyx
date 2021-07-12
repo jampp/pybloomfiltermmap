@@ -297,7 +297,7 @@ cdef class BloomFilter:
             key.nhash = hash(item)
         return cbloomfilter.bloomfilter_Test(self._bf, &key) == 1
 
-    def copy_template(self, filename, mode='rw+', perm=0755):
+    def copy_template(self, filename=None, mode='rw+', perm=0755):
         self._assert_open()
         cdef BloomFilter copy = BloomFilter(0, 0, NoConstruct)
 
