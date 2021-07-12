@@ -82,7 +82,7 @@ cdef class BloomFilter:
         perm, permissions for when the file is created, not opened. 0755 means Read, Write, Execute access for owner,
         read, execute for group owner and others.
         seed: If set, seed to use to generate the hash_seeds.
-        bf_version: Version to use when creating a new BloomFilter.
+        version: Version to use when creating a new BloomFilter.
         """
         cdef char * seeds
         cdef BTYPE num_bits
