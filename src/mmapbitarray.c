@@ -67,7 +67,7 @@ MBArray * mbarray_Create_Malloc(BTYPE num_bits, const char * header, int32_t hea
     return array;
 }
 
-extern uint64_t __dummy_count;
+uint64_t __dummy_count = 0;
 
 MBArray * mbarray_Create_Mmap(BTYPE num_bits, const char * file, const char * header, int32_t header_len, int oflag, int perms)
 {
