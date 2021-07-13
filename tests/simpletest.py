@@ -1,3 +1,4 @@
+import array
 import os
 import string
 import unittest
@@ -36,8 +37,7 @@ class SimpleTestCase(unittest.TestCase):
         # Assert that a "new" BloomFilter has the same properties as an "old"
         # one.
         failures = []
-        for prop in ['capacity', 'error_rate', 'num_hashes', 'num_bits',
-                     'hash_seeds']:
+        for prop in ['version', 'capacity', 'error_rate', 'num_hashes', 'num_bits', 'hash_seeds']:
             old, new = getattr(old_bf, prop), getattr(new_bf, prop)
             if new != old:
                 failures.append((prop, old, new))
@@ -101,6 +101,20 @@ class SimpleTestCase(unittest.TestCase):
 
     def test_invalid_version(self):
         self.assertRaises(ValueError, pybloomfilter.BloomFilter, 100, 0.01, version=0)
+
+    def test_invalid_hash_seeds_type(self):
+        self.assertRaises(ValueError, pybloomfilter.BloomFilter, 100, 0.05, hash_seeds=[1, 2, 3, 4])
+
+    def test_invalid_hash_seeds_typecode(self):
+        self.assertRaises(ValueError, pybloomfilter.BloomFilter, 100, 0.05, hash_seeds=array.array("Q", [1, 2, 3, 4]))
+
+    def test_invalid_hash_seeds_len(self):
+        self.assertRaises(ValueError, pybloomfilter.BloomFilter, 100, 0.05, hash_seeds=array.array("I", [1, 2, 3]))
+
+    def test_valid_hash_seeds(self):
+        hash_seeds = array.array("I", [1, 2, 3, 4])
+        bf = pybloomfilter.BloomFilter(100, 0.05, hash_seeds=hash_seeds)
+        self.assertEqual(bf.hash_seeds, hash_seeds)
 
     def test_repr(self):
         self.assertEqual(
