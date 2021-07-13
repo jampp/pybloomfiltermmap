@@ -1,3 +1,4 @@
+import array
 import os
 import string
 import unittest
@@ -36,8 +37,7 @@ class SimpleTestCase(unittest.TestCase):
         # Assert that a "new" BloomFilter has the same properties as an "old"
         # one.
         failures = []
-        for prop in ['capacity', 'error_rate', 'num_hashes', 'num_bits',
-                     'hash_seeds']:
+        for prop in ['version', 'capacity', 'error_rate', 'num_hashes', 'num_bits', 'hash_seeds']:
             old, new = getattr(old_bf, prop), getattr(new_bf, prop)
             if new != old:
                 failures.append((prop, old, new))
@@ -99,18 +99,35 @@ class SimpleTestCase(unittest.TestCase):
             # We should *never* have a false negative
             self.assertFalse(item in bf, '%r WAS in %r' % (item, bf))
 
+    def test_invalid_version(self):
+        self.assertRaises(ValueError, pybloomfilter.BloomFilter, 100, 0.01, version=0)
+
+    def test_invalid_hash_seeds_type(self):
+        self.assertRaises(ValueError, pybloomfilter.BloomFilter, 100, 0.05, hash_seeds=[1, 2, 3, 4])
+
+    def test_invalid_hash_seeds_typecode(self):
+        self.assertRaises(ValueError, pybloomfilter.BloomFilter, 100, 0.05, hash_seeds=array.array("Q", [1, 2, 3, 4]))
+
+    def test_invalid_hash_seeds_len(self):
+        self.assertRaises(ValueError, pybloomfilter.BloomFilter, 100, 0.05, hash_seeds=array.array("I", [1, 2, 3]))
+
+    def test_valid_hash_seeds(self):
+        hash_seeds = array.array("I", [1, 2, 3, 4])
+        bf = pybloomfilter.BloomFilter(100, 0.05, hash_seeds=hash_seeds)
+        self.assertEqual(bf.hash_seeds, hash_seeds)
+
     def test_repr(self):
         self.assertEqual(
-            '<BloomFilter capacity: %d, error: %0.3f, num_hashes: %d>' % (
-                self.bf.capacity, self.bf.error_rate, self.bf.num_hashes),
+            '<BloomFilter version: %d, capacity: %d, error: %0.3f, num_hashes: %d>' % (
+                self.bf.version, self.bf.capacity, self.bf.error_rate, self.bf.num_hashes),
             repr(self.bf))
         self.assertEqual(
-            u'<BloomFilter capacity: %d, error: %0.3f, num_hashes: %d>' % (
-                self.bf.capacity, self.bf.error_rate, self.bf.num_hashes),
+            u'<BloomFilter version: %d, capacity: %d, error: %0.3f, num_hashes: %d>' % (
+                self.bf.version, self.bf.capacity, self.bf.error_rate, self.bf.num_hashes),
             unicode(self.bf))
         self.assertEqual(
-            '<BloomFilter capacity: %d, error: %0.3f, num_hashes: %d>' % (
-                self.bf.capacity, self.bf.error_rate, self.bf.num_hashes),
+            '<BloomFilter version: %d, capacity: %d, error: %0.3f, num_hashes: %d>' % (
+                self.bf.version, self.bf.capacity, self.bf.error_rate, self.bf.num_hashes),
             str(self.bf))
 
     def test_add_and_check_file_backed(self):
@@ -201,14 +218,49 @@ class SimpleTestCase(unittest.TestCase):
         bf.add(1234)
         self.assertEquals(1234 in bf, True)
 
-    def test_name_does_not_segfault(self):
+    @with_test_file
+    def test_name_does_not_segfault(self, filename):
         bf = pybloomfilter.BloomFilter(100, 0.01)
-        self.assertRaises(NotImplementedError, lambda: bf.name)
+        self.assertIsNone(bf.name)
 
-    def test_copy_does_not_segfault(self):
-        bf = pybloomfilter.BloomFilter(100, 0.01)
-        with tempfile.NamedTemporaryFile(suffix='.bloom') as f2:
-            self.assertRaises(NotImplementedError, bf.copy, f2.name)
+        bf = pybloomfilter.BloomFilter(100, 0.01, filename)
+        self.assertEqual(bf.name.decode(), filename)
+
+    def test_mmap_copy_to_mmap(self):
+        with tempfile.NamedTemporaryFile(suffix='.bloom') as f1:
+            with tempfile.NamedTemporaryFile(suffix='.bloom') as f2:
+                bf = pybloomfilter.BloomFilter(100, 0.01, f1.name)
+                bf.add("hello world")
+                bf2 = bf.copy(f2.name)
+                self.assertIsNotNone(bf2)
+                self.assertIn("hello world", bf)
+                self.assertIn("hello world", bf2)
+
+    @with_test_file
+    def test_mmap_copy_to_in_memory(self, filename):
+        bf = pybloomfilter.BloomFilter(100, 0.01, filename)
+        bf.add("hello world")
+        bf2 = bf.copy(None)
+        self.assertIsNotNone(bf2)
+        self.assertIn("hello world", bf)
+        self.assertIn("hello world", bf2)
+
+    @with_test_file
+    def test_in_memory_copy_to_mmap(self, filename):
+        bf = pybloomfilter.BloomFilter(100, 0.01, None)
+        bf.add("hello world")
+        bf2 = bf.copy(filename)
+        self.assertIsNotNone(bf2)
+        self.assertIn("hello world", bf)
+        self.assertIn("hello world", bf2)
+
+    def test_in_memory_copy_to_in_memory(self):
+        bf = pybloomfilter.BloomFilter(100, 0.01, None)
+        bf.add("hello world")
+        bf2 = bf.copy(None)
+        self.assertIsNotNone(bf2)
+        self.assertIn("hello world", bf)
+        self.assertIn("hello world", bf2)
 
     def test_to_base64_does_not_segfault(self):
         bf = pybloomfilter.BloomFilter(100, 0.01)

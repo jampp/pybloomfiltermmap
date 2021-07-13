@@ -14,15 +14,16 @@
 /* Private helpers */
 static inline uint64_t _filesize(int fd);
 static inline int _valid_magic(int fd);
-int _initialize_file(int fd, size_t end, BTYPE num_bits, const char * header, int32_t header_len);
-uint64_t _get_num_bits(int fd);
-static inline size_t _mmap_size(MBArray * array);
+static int _initialize_file(int fd, size_t end, BTYPE num_bits, const char * header, int32_t header_len);
+static void _initialize_in_memory_vector(DTYPE * vector, BTYPE num_bits, const char * header, int32_t header_len);
+static uint64_t _get_num_bits(int fd);
+static inline size_t _array_size(MBArray * array);
 /*    __attribute__((always_inline));*/
 
 static inline int _assert_comparable(MBArray * array1, MBArray * array2);
 /*    __attribute__((always_inline));;*/
 
-MBArray * mbarray_Create_Malloc(BTYPE num_bits)
+MBArray * mbarray_Create_Malloc(BTYPE num_bits, const char * header, int32_t header_len)
 {
     // Try to allocate space for a MBArray struct
     errno = 0;
@@ -39,11 +40,15 @@ MBArray * mbarray_Create_Malloc(BTYPE num_bits)
     array->filename      = NULL;
     array->vector        = NULL;
 	array->fd            = 0;
-	array->preamblesize  = 0;
-	array->preamblebytes = 0;
+
+    array->preamblebytes = MBAMAGICSIZE + sizeof(BTYPE) + sizeof(header_len) + header_len;
+
+    /* This size is using 256-byte alignment so that we can use pretty much any base 2 data type */
+    array->preamblesize = ((int)ceil((double)array->preamblebytes / 256.0) * 256) / sizeof(DTYPE);
+    array->preamblebytes = array->preamblesize * (sizeof(DTYPE));
 
     // This is how many DTYPEs there are, and how many bytes there
-    // are in this particular structure. As well as the number of 
+    // are in this particular structure. As well as the number of
     // bits
     array->size  = (size_t)ceil((double)num_bits / sizeof(DTYPE) / 8.0);
     array->bytes = (size_t)ceil((double)num_bits / 8.0);
@@ -51,12 +56,14 @@ MBArray * mbarray_Create_Malloc(BTYPE num_bits)
 
     // Now try to allocate enough space for our array
     errno = 0;
-    array->vector = (DTYPE *)calloc(array->bytes, 1);
+    array->vector = (DTYPE *)calloc(_array_size(array), 1);
     if (errno || !array->vector) {
         mbarray_Destroy(array);
         return NULL;
     }
 
+    // Needed so the array is comparable to an mmapped one
+    _initialize_in_memory_vector(array->vector, num_bits, header, header_len);
     return array;
 }
 
@@ -151,14 +158,15 @@ MBArray * mbarray_Create_Mmap(BTYPE num_bits, const char * file, const char * he
 
     int mmap_flags = PROT_READ;
     mmap_flags |= (oflag & O_RDWR) ? PROT_WRITE : 0; //add PROT_WRITE if we have write permissions
-    
+
     array->vector = (DTYPE *)mmap(NULL,
-                                  _mmap_size(array),
+                                  _array_size(array),
                                   mmap_flags,
-                                  MAP_SHARED, 
+                                  MAP_SHARED,
                                   array->fd,
                                   0);
-    if (errno || !array->vector) {
+    if (errno || array->vector == MAP_FAILED) {
+        array->vector = NULL;
         mbarray_Destroy(array);
         return NULL;
     }
@@ -182,7 +190,7 @@ void mbarray_Destroy(MBArray * array)
 				free((void*)array->vector);
 				array->vector = NULL;
             } else {
-                if (munmap(array->vector, _mmap_size(array))) {
+                if (munmap(array->vector, _array_size(array))) {
                     fprintf(stderr, "Unable to close mmap!\n");
                 }
                 if (array->fd >= 0) {
@@ -234,9 +242,15 @@ int mbarray_Sync(MBArray * array)
         errno = EINVAL;
         return 1;
     }
-    if (msync(array->vector, _mmap_size(array), MS_ASYNC)) {
+
+    if (array->filename == NULL) {
+        return 0;
+    }
+
+    if (msync(array->vector, _array_size(array), MS_ASYNC)) {
         return 1;
     }
+
     return 0;
 }
 
@@ -254,7 +268,7 @@ int mbarray_ClearAll(MBArray * array)
 
 MBArray * mbarray_And(MBArray * dest, MBArray * array2)
 {
-    register int i;
+    register size_t i;
     if (_assert_comparable(dest, array2))
         return NULL;
 
@@ -267,7 +281,7 @@ MBArray * mbarray_And(MBArray * dest, MBArray * array2)
 
 MBArray * mbarray_Or(MBArray * dest, MBArray * array2)
 {
-    register int i;
+    register size_t i;
     if (_assert_comparable(dest, array2))
         return NULL;
     for (i = 0; i < dest->size + dest->preamblesize; i++) {
@@ -279,7 +293,7 @@ MBArray * mbarray_Or(MBArray * dest, MBArray * array2)
 
 MBArray * mbarray_Xor(MBArray * dest, MBArray * array2)
 {
-    register int i;
+    register size_t i;
     if (_assert_comparable(dest, array2))
         return NULL;
 
@@ -292,7 +306,7 @@ MBArray * mbarray_Xor(MBArray * dest, MBArray * array2)
 
 MBArray * mbarray_And_Ternary(MBArray * dest, MBArray * a, MBArray * b)
 {
-    register int i;
+    register size_t i;
     if (_assert_comparable(a, b) || _assert_comparable(dest, b))
         return NULL;
 
@@ -304,7 +318,7 @@ MBArray * mbarray_And_Ternary(MBArray * dest, MBArray * a, MBArray * b)
 
 MBArray * mbarray_Or_Ternary(MBArray * dest, MBArray * a, MBArray * b)
 {
-    register int i;
+    register size_t i;
     if (_assert_comparable(a, b) || _assert_comparable(dest, b))
         return NULL;
 
@@ -316,7 +330,7 @@ MBArray * mbarray_Or_Ternary(MBArray * dest, MBArray * a, MBArray * b)
 
 MBArray * mbarray_Xor_Ternary(MBArray * dest, MBArray * a, MBArray * b)
 {
-    register int i;
+    register size_t i;
     if (_assert_comparable(a, b) || _assert_comparable(dest, b))
         return NULL;
 
@@ -385,12 +399,13 @@ int mbarray_Update(MBArray * array, char * data, int size)
 
 static inline int _assert_comparable(MBArray * array1, MBArray * array2)
 {
-    errno = EINVAL;
     if (array1->preamblebytes != array2->preamblebytes) {
+        errno = EINVAL;
         return 1;
     }
 
     if (memcmp((char *)array1->vector, (char *)array2->vector, MBAMAGICSIZE + sizeof(BTYPE) + sizeof(int32_t))) {
+        errno = EINVAL;
         return 1;
     }
 
@@ -399,7 +414,7 @@ static inline int _assert_comparable(MBArray * array1, MBArray * array2)
 __attribute__((always_inline))
 
 
-static inline size_t _mmap_size(MBArray * array)
+static inline size_t _array_size(MBArray * array)
 {
     return array->bytes + array->preamblebytes;
 }
@@ -432,7 +447,7 @@ static inline uint64_t _filesize(int fd)
     return (uint64_t)buffer.st_size;
 }
 
-uint64_t _get_num_bits(int fd) {
+static uint64_t _get_num_bits(int fd) {
     uint64_t num_bits;
     errno = 0;
     if (pread(fd, &num_bits, sizeof(uint64_t), MBAMAGICSIZE) != sizeof(uint64_t)) {
@@ -441,7 +456,7 @@ uint64_t _get_num_bits(int fd) {
     return num_bits;
 }
 
-int _initialize_file(int fd, size_t end, BTYPE num_bits, const char * header, int32_t header_len)
+static int _initialize_file(int fd, size_t end, BTYPE num_bits, const char * header, int32_t header_len)
 {
     unsigned char zero = 0;
     errno = 0;
@@ -472,6 +487,16 @@ int _initialize_file(int fd, size_t end, BTYPE num_bits, const char * header, in
     return 0;
 }
 
+static void _initialize_in_memory_vector(DTYPE * vector, BTYPE num_bits, const char * header, int32_t header_len) {
+    char *dest = (char *)vector;
+    memcpy(dest, MBAMAGIC, MBAMAGICSIZE);
+    dest += MBAMAGICSIZE;
+    memcpy(dest, &num_bits, sizeof(BTYPE));
+    dest += sizeof(BTYPE);
+    memcpy(dest, &header_len, sizeof(header_len));
+    dest += sizeof(header_len);
+    memcpy(dest, header, header_len);
+}
 
 
 #ifdef MBACREATE

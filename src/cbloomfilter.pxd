@@ -1,53 +1,51 @@
-
-cdef extern from "primetester.h":
-     long next_prime(long prime)
-
 cdef extern from "mmapbitarray.h":
+     ctypedef unsigned long long BTYPE
+
      ctypedef struct MBArray:
-         long bits
-         long size
+         BTYPE bits
+         size_t size
          char * filename
          int fd
 
      MBArray * mbarray_ClearAll(MBArray * array)
-     MBArray * mbarray_Sync(MBArray * array)
+     int mbarray_Sync(MBArray * array)
      MBArray * mbarray_And(MBArray * dest, MBArray * src)
      MBArray * mbarray_Or(MBArray * dest, MBArray * src)
-     MBArray * mbarray_Xor(MBArray * dest, MBArray * src)
-     MBArray * mbarray_And_Ternary(MBArray * dest, MBArray * a, MBArray * b)
-     MBArray * mbarray_Or_Ternary(MBArray * dest, MBArray * a, MBArray * b)
-     MBArray * mbarray_Xor_Ternary(MBArray * dest, MBArray * a, MBArray * b)
-     int mbarray_Update(MBArray * array, char * data, int size)
-     int mbarray_FileSize(MBArray * array)
-     char * mbarray_CharData(MBArray * array)
 
 
 cdef extern from "bloomfilter.h":
+     ctypedef unsigned long uint32_t
+     ctypedef unsigned long long uint64_t
+
+     cdef enum:
+         BF_CURRENT_VERSION
+         HASH64_THRESHOLD
+
      ctypedef struct BloomFilter:
-         long max_num_elem
+         uint64_t max_num_elem
          double error_rate
-         int num_hashes
-         long * hash_seeds
+         uint32_t num_hashes
+         uint32_t * hash_seeds
          MBArray * array
          unsigned char bf_version
          unsigned char count_correct
-         unsigned long long elem_count
+         uint64_t elem_count
 
      ctypedef struct Key:
          long nhash
          char * shash
 
-     BloomFilter * bloomfilter_Create_Mmap(long max_num_elem,
+     BloomFilter * bloomfilter_Create_Mmap(uint64_t max_num_elem,
                                       double error_rate,
-                                      char * fname, long num_bits,
+                                      char * fname, BTYPE num_bits,
                                       int oflags, int perms,
-                                      int * hash_seeds, int num_hashes)
-     BloomFilter * bloomfilter_Create_Malloc(long max_num_elem,
+                                      uint32_t * hash_seeds, uint32_t num_hashes,
+                                      unsigned char bf_version)
+     BloomFilter * bloomfilter_Create_Malloc(uint64_t max_num_elem,
                                       double error_rate,
-                                      long num_bits,
-                                      int * hash_seeds, int num_hashes)
+                                      BTYPE num_bits,
+                                      uint32_t * hash_seeds, uint32_t num_hashes,
+                                      unsigned char bf_version)
      void bloomfilter_Destroy(BloomFilter * bf)
      int bloomfilter_Add(BloomFilter * bf, Key * key)
      int bloomfilter_Test(BloomFilter * bf, Key * key)
-     int bloomfilter_Update(BloomFilter * bf, char * data, int size)
-     BloomFilter * bloomfilter_Copy_Template(BloomFilter * src, char * filename, int perms)

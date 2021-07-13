@@ -4,7 +4,8 @@
 #include <stdlib.h>
 
 #include "mmapbitarray.h"
-#define BF_CURRENT_VERSION 1
+#define BF_CURRENT_VERSION 2
+#define HASH64_THRESHOLD   0x7fffffff  // Max 32bits value with some margin to avoid collisions
 
 struct _BloomFilter {
     uint64_t max_num_elem;
@@ -27,13 +28,13 @@ typedef struct {
 typedef struct _BloomFilter BloomFilter;
 
 /* Create a bloom filter without a memory-mapped file backing it */
-BloomFilter *bloomfilter_Create_Malloc(size_t max_num_elem, double error_rate,
-                                BTYPE num_bits, int *hash_seeds, int num_hashes);
+BloomFilter *bloomfilter_Create_Malloc(uint64_t max_num_elem, double error_rate,
+                                BTYPE num_bits, uint32_t *hash_seeds, uint32_t num_hashes, unsigned char bf_version);
 
 /* Create a bloom filter with a memory-mapped file backing it */
-BloomFilter *bloomfilter_Create_Mmap(size_t max_num_elem, double error_rate,
+BloomFilter *bloomfilter_Create_Mmap(uint64_t max_num_elem, double error_rate,
                                 const char * file, BTYPE num_bits, int oflags, int perms,
-                                int *hash_seeds, int num_hashes);
+                                uint32_t *hash_seeds, uint32_t num_hashes, unsigned char bf_version);
 
 void bloomfilter_Destroy(BloomFilter * bf);
 
@@ -42,18 +43,28 @@ int bloomfilter_Update(BloomFilter * bf, char * data, int size);
 BloomFilter * bloomfilter_Copy_Template(BloomFilter * src, char * filename, int perms);
 
 /* A lot of this is inlined.. */
-BTYPE _hash_char(uint32_t hash_seed, Key * key);
+BTYPE _hash_char32(uint32_t hash_seed, Key * key);
+BTYPE _hash_char64(uint32_t hash_seed, Key * key);
 
-BTYPE _hash_long(uint32_t hash_seed, Key * key);
+BTYPE _hash_long32(uint32_t hash_seed, Key * key);
+BTYPE _hash_long64(uint32_t hash_seed, Key * key);
 
 
 static inline int bloomfilter_Add(BloomFilter * bf, Key * key)
 {
-    BTYPE (*hashfunc)(uint32_t, Key *) = _hash_char;
+    BTYPE (*_hash_char)(uint32_t, Key *) = _hash_char32;
+    BTYPE (*_hash_long)(uint32_t, Key *) = _hash_long32;
     register BTYPE mod = bf->array->bits;
     register int i;
     register int result = 1;
     register BTYPE hash_res;
+
+    if (bf->bf_version >= 2 && mod >= HASH64_THRESHOLD) {
+        _hash_char = _hash_char64;
+        _hash_long = _hash_long64;
+    }
+
+    BTYPE (*hashfunc)(uint32_t, Key *) = _hash_char;
 
     if (key->shash == NULL)
         hashfunc = _hash_long;
@@ -77,9 +88,17 @@ __attribute__((always_inline))
 
 static inline int bloomfilter_Test(BloomFilter * bf, Key * key)
 {
+    BTYPE (*_hash_char)(uint32_t, Key *) = _hash_char32;
+    BTYPE (*_hash_long)(uint32_t, Key *) = _hash_long32;
     register BTYPE mod = bf->array->bits;
-    register BTYPE (*hashfunc)(uint32_t, Key *) = _hash_char;
     register int i;
+
+    if (bf->bf_version >= 2 && mod >= HASH64_THRESHOLD) {
+        _hash_char = _hash_char64;
+        _hash_long = _hash_long64;
+    }
+
+    BTYPE (*hashfunc)(uint32_t, Key *) = _hash_char;
 
     if (key->shash == NULL)
         hashfunc = _hash_long;
