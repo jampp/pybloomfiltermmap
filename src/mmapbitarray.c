@@ -67,6 +67,8 @@ MBArray * mbarray_Create_Malloc(BTYPE num_bits, const char * header, int32_t hea
     return array;
 }
 
+extern uint64_t __dummy_count;
+
 MBArray * mbarray_Create_Mmap(BTYPE num_bits, const char * file, const char * header, int32_t header_len, int oflag, int perms)
 {
     errno = 0;
@@ -177,6 +179,13 @@ MBArray * mbarray_Create_Mmap(BTYPE num_bits, const char * file, const char * he
     }
     strcpy((char *)array->filename, file);
     array->bits = num_bits;
+
+    // Dummy loop to force read of whole vector. Reduces writeback when doing multiple insert operations
+    size_t i;
+    for (i = 0; i < array->size + array->preamblesize; i++) {
+        __dummy_count += array->vector[i];
+    }
+
     return array;
 }
 
