@@ -74,6 +74,7 @@ cdef class BloomFilter:
             mode='rw+',
             int perm=0755,
             seed=None,
+            hash_seeds=None,
             unsigned char version=cbloomfilter.BF_CURRENT_VERSION,
     ):
 
@@ -82,6 +83,7 @@ cdef class BloomFilter:
         perm, permissions for when the file is created, not opened. 0755 means Read, Write, Execute access for owner,
         read, execute for group owner and others.
         seed: If set, seed to use to generate the hash_seeds.
+        hash_seeds: If set, the explicit hash_seeds to use when creating the BloomFilter.
         version: Version to use when creating a new BloomFilter.
         """
         cdef char * seeds
@@ -168,11 +170,16 @@ cdef class BloomFilter:
             #    (1.0 - math.exp(- float(num_hashes) * float(capacity) / num_bits))
             #    ** num_hashes)
 
-            rand = random.Random()
-            if seed is not None:
-                rand.seed(seed)
-            hash_seeds = array.array('I')
-            hash_seeds.extend([rand.getrandbits(32) for i in range(num_hashes)])
+            if hash_seeds is not None:
+                if not isinstance(hash_seeds, array.array) or hash_seeds.typecode != "I" or len(hash_seeds) != num_hashes:
+                    raise ValueError("Invalid hash_seeds")
+            else:
+                rand = random.Random()
+                if seed is not None:
+                    rand.seed(seed)
+                hash_seeds = array.array('I')
+                hash_seeds.extend([rand.getrandbits(32) for i in range(num_hashes)])
+
             test = _array_tobytes(hash_seeds)
             seeds = test
 
@@ -299,30 +306,15 @@ cdef class BloomFilter:
 
     def copy_template(self, filename=None, mode='rw+', perm=0755):
         self._assert_open()
-        cdef BloomFilter copy = BloomFilter(0, 0, NoConstruct)
+        cdef BloomFilter copy = BloomFilter(self._bf.max_num_elem,
+                                            self._bf.error_rate,
+                                            filename,
+                                            mode,
+                                            perm,
+                                            hash_seeds=self.hash_seeds,
+                                            version=self._bf.bf_version)
 
-        if filename:
-            oflags = construct_mode(mode)
-            if oflags & os.O_CREAT and os.path.exists(filename):
-                os.unlink(filename)
-            copy._bf = cbloomfilter.bloomfilter_Create_Mmap(self._bf.max_num_elem,
-                                                            self._bf.error_rate,
-                                                            filename.encode(),
-                                                            self._bf.array.bits,
-                                                            oflags,
-                                                            perm,
-                                                            self._bf.hash_seeds,
-                                                            self._bf.num_hashes,
-                                                            self._bf.bf_version)
-        else:
-            copy._in_memory = 1
-            copy._bf = cbloomfilter.bloomfilter_Create_Malloc(self._bf.max_num_elem,
-                                                              self._bf.error_rate,
-                                                              self._bf.array.bits,
-                                                              self._bf.hash_seeds,
-                                                              self._bf.num_hashes,
-                                                              self._bf.bf_version)
-
+        self._assert_comparable(copy)
         return copy
 
     def copy(self, filename=None):
